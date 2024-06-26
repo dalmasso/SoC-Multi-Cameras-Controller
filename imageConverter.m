@@ -2,7 +2,7 @@ function img2 = imageConverter(imgfile, outfile)
 % Create .coe file from .bmp .jpg image
 % .coe file contains 8-bit words (bytes)
 % each byte contains one 8-bit pixel
-% color byte: [R2,R1,R0,G2,G1,G0,B1,B0]
+% color byte: [R2,R1,R0,G2,G1,G0,B1,B0] (-> Outbyte = [ Rb(1:3) Gb(1:3) Bb(1:2) ])
 % img2 = IMG2coe8(imgfile, outfile)
 % img2 is 256-bit color image
 % imgfile = input .bmp file / .jpg
@@ -36,10 +36,10 @@ for r=1:height
         Rb = dec2bin(double(R),8);
         Gb = dec2bin(double(G),8);
         Bb = dec2bin(double(B),8);
-        img2(r,c,1) = bin2dec([Rb(1:3) '00000']);
-        img2(r,c,2) = bin2dec([Gb(1:3) '00000']);
-        img2(r,c,3) = bin2dec([Bb(1:2) '000000']);
-        Outbyte = [ Rb(1:3) Gb(1:3) Bb(1:2) ];
+        img2(r,c,1) = bin2dec([Rb(1:4) '0000']);
+        img2(r,c,2) = bin2dec([Gb(1:4) '0000']);
+        img2(r,c,3) = bin2dec([Bb(1:4) '0000']);
+        Outbyte = [ Rb(1:4) Gb(1:4) Bb(1:4) ];
         
         if (Outbyte(1:4) == '0000')
             fprintf(s,'0%X',bin2dec(Outbyte));
