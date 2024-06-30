@@ -39,7 +39,6 @@ ARCHITECTURE Behavioral of VGAController is
 COMPONENT clk_wiz_0 is
 	PORT(
 		clk_out1: OUT STD_LOGIC;
-		locked: OUT STD_LOGIC;
 		clk_in1: IN STD_LOGIC
 	);
 END COMPONENT;
@@ -123,13 +122,16 @@ constant VSW: UNSIGNED(3 downto 0) := X"5";
 -- Vertical Lines (1125 per line)
 constant VLINES: UNSIGNED(11 downto 0) := X"465";
 
--- VGA Image Width (240 pixel) & Heigh (160 pixels)
+-- Image Width (240 pixels) & Heigh (160 pixels)
 constant IMAGE_WIDTH: UNSIGNED(11 downto 0) := X"0F0";
 constant IMAGE_HEIGH: UNSIGNED(11 downto 0) := X"0A0";
 
 ------------------------------------------------------------------------
 -- Signal Declarations
 ------------------------------------------------------------------------
+-- Pixel Clock
+signal pixel_clock: STD_LOGIC := '0';
+
 -- Synchronizer
 signal synchronized_reset: STD_LOGIC := '0';
 
@@ -139,31 +141,26 @@ signal h_counter: UNSIGNED(11 downto 0) := (others => '0');
 -- Vertical Counter
 signal v_counter: UNSIGNED(11 downto 0) := (others => '0');
 signal v_counter_enable: STD_LOGIC := '0';
+signal v_sync: STD_LOGIC := '0';
 
--- VGA Pixel Clock
-signal pixel_clock: STD_LOGIC := '0';
-signal pixel_clock_enable: STD_LOGIC := '0';
-
--- VGA Video ON
+-- Video ON
 signal video_on: STD_LOGIC := '0';
-
--- VGA Image ON
-signal image_on: STD_LOGIC := '0';
-
--- Image Pixel Coordinates
-signal xpix: UNSIGNED(11 downto 0) := (others => '0');
-signal ypix: UNSIGNED(11 downto 0) := (others => '0');
-
--- Dual RAM
-signal filtered_image_write_enable: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
-signal filtered_image_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
-signal filtered_image_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
-signal read_ram_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
-signal read_ram_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
 -- ROM
 signal rom_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
 signal rom_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
+
+-- Dual Port RAM
+signal ram_write_enable: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
+signal ram_write_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
+signal ram_write_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
+signal ram_read_addr: UNSIGNED(15 downto 0) := (others => '0');
+signal ram_read_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
+signal ram_read_enable: STD_LOGIC := '0';
+
+-- VGA Display
+signal display_data_ready: STD_LOGIC := '0';
+signal display_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -173,7 +170,7 @@ begin
 	---------------------
 	-- VGA Pixel Clock --
 	---------------------
-	inst_vgaPixelClock : clk_wiz_0 port map (clk_out1 => pixel_clock, locked => pixel_clock_enable, clk_in1 => i_clock_100);
+	inst_vgaPixelClock : clk_wiz_0 port map (clk_out1 => pixel_clock, clk_in1 => i_clock_100);
 
 	------------------
 	-- Synchronizer --
@@ -186,14 +183,12 @@ begin
 	process(pixel_clock)
 	begin
 		if rising_edge(pixel_clock) then
-            if (pixel_clock_enable = '1') then
-                if (synchronized_reset = '0') or (h_counter = HPIXELS -1) then
-                    h_counter <= (others => '0');
-                    v_counter_enable <= '1';
-                else
-                    h_counter <= h_counter +1;
-                    v_counter_enable <= '0';
-                end if;
+            if (synchronized_reset = '0') or (h_counter = HPIXELS -1) then
+                h_counter <= (others => '0');
+                v_counter_enable <= '1';
+            else
+                h_counter <= h_counter +1;
+                v_counter_enable <= '0';
             end if;
 		end if;
 	end process;
@@ -204,13 +199,11 @@ begin
 	process(pixel_clock)
 	begin
 		if rising_edge(pixel_clock) then
-            if (pixel_clock_enable = '1') then
-                if (v_counter_enable = '1') then
-                    if (v_counter = VLINES -1) then
-                        v_counter <= (others => '0');
-                    else
-                        v_counter <= v_counter +1;
-                    end if;
+            if (v_counter_enable = '1') then
+                if (v_counter = VLINES -1) then
+                    v_counter <= (others => '0');
+                else
+                    v_counter <= v_counter +1;
                 end if;
             end if;
 		end if;
@@ -218,65 +211,78 @@ begin
 
     -- HSync & VSync
     o_hsync <= '0' when h_counter < HSW else '1';
-    o_vsync <= '0' when v_counter < VSW else '1';
+	v_sync <= '0' when v_counter < VSW else '1';
+    o_vsync <= v_sync;
 
 	-- Video ON
 	video_on <= '1' when ((HSW + HBP) <= h_counter and h_counter < (HPIXELS - HFP)) and ((VSW + VBP) <= v_counter and v_counter < (VLINES - VFP)) else '0';
 
-	-- Image ON
-	image_on <= '1' when video_on = '1' and h_counter < (HSW + HBP + IMAGE_WIDTH) and v_counter < (VSW + VBP + IMAGE_HEIGH) else '0';
-
+	-----------------------------------------
+	-- Memory Address (from Dual Port RAM) --
+	-----------------------------------------
 	-- Image Pixel Coordinates (240 x 160)
-	xpix <= h_counter - (HSW + HBP) when image_on = '1' else (others => '0');
-	ypix <= v_counter - (VSW + VBP) when image_on = '1' else (others => '0');
+	-- Memory Read Enable (Need to anticipate pixels to pre-load data from memory)
+	ram_read_enable <= '1' when (HSW + HBP-1) <= h_counter and h_counter < (HSW + HBP-1 + IMAGE_WIDTH) and h_counter < (HPIXELS - HFP) and 
+								(VSW + VBP) <= v_counter and v_counter < (VSW + VBP + IMAGE_HEIGH) and v_counter < (VLINES - VFP) else '0'; 
 
-	-------------------------------
-	-- VGA Image (from Dual RAM) --
-	-------------------------------
 	process(pixel_clock)
 	begin
 		if rising_edge(pixel_clock) then
-            if (pixel_clock_enable = '1') and (image_on = '1') then
 
-				-- RAM Addr = ypix * 240 + xpix
-                read_ram_addr <= STD_LOGIC_VECTOR(
-								( "0" & ypix( 7 downto 0 ) & "0000000" )
-								+ ( "00" & ypix( 7 downto 0 ) & "000000" )
-								+ ( "000" & ypix( 7 downto 0 ) & "00000" )
-								+ ( "0000" & ypix( 7 downto 0 ) & "0000" )
-								+ ( "0000000" & xpix( 7 downto 0 )));
-
-            end if;
-		end if;
+			-- Reset RAM Read Addr
+			if (v_sync = '0') then
+				ram_read_addr <= (others => '0');
+			
+			-- Read RAM (active Image Coordinates AND NOT no Write Operation)
+            elsif (ram_read_enable = '1') and (ram_write_enable = "0") then
+				-- Need to anticipate pixels to pre-load data from memory
+				ram_read_addr <= ram_read_addr +1;
+	        end if;
+	    end if;
 	end process;
-
-	--------------
-	-- Dual RAM --
-	--------------
-	inst_DualRAM : blk_mem_gen_1 port map (clka => pixel_clock,
-		wea => filtered_image_write_enable,
-		addra => filtered_image_addr, 
-		dina => filtered_image_data,
-		clkb => pixel_clock,
-		addrb => read_ram_addr,
-		doutb => read_ram_data);
-
+	
 	------------------
 	-- Image Filter --
 	------------------
-	inst_imageFilter : ImageFilter port map (i_pixel_clock => pixel_clock,
-	i_filter_mode_sw => i_filter_mode_sw,
-	i_image_to_filter => rom_data,
-	o_image_to_filter_addr => rom_addr,
-	o_filtered_image_write_enable => filtered_image_write_enable,
-	o_filtered_image_addr => filtered_image_addr,
-	o_filtered_image_data => filtered_image_data);
+	inst_imageFilter : ImageFilter port map (
+		i_pixel_clock => pixel_clock,
+		i_filter_mode_sw => i_filter_mode_sw,
+		i_image_to_filter => rom_data,
+		o_image_to_filter_addr => rom_addr,
+		o_filtered_image_write_enable => ram_write_enable,
+		o_filtered_image_addr => ram_write_addr,
+		o_filtered_image_data => ram_write_data);
 
+	------------------
+	-- Memory - ROM --
+	------------------
 	inst_ROM : blk_mem_gen_0 port map (clka => pixel_clock, addra => rom_addr, douta => rom_data);
+
+	----------------------------
+	-- Memory - Dual Port RAM --
+	----------------------------
+	inst_DualRAM : blk_mem_gen_1 port map (clka => pixel_clock,
+		wea => ram_write_enable,
+		addra => ram_write_addr, 
+		dina => ram_write_data,
+		clkb => pixel_clock,
+		addrb => STD_LOGIC_VECTOR(ram_read_addr),
+		doutb => ram_read_data);
 
 	-----------------
 	-- VGA Display --
 	-----------------
-	inst_vgaDisplay : VGADisplay port map (i_enable => image_on, i_data => read_ram_data, o_red => o_vga_red, o_green => o_vga_green, o_blue => o_vga_blue);
+	-- Display Data Ready
+	process(pixel_clock)
+	begin
+		if rising_edge(pixel_clock) then
+            display_data_ready <= ram_read_enable;
+	    end if;
+	end process;
+
+	-- Data Selector
+	display_data <= ram_read_data when display_data_ready = '1' else (others => '0');
+	
+	inst_vgaDisplay : VGADisplay port map (i_enable => video_on, i_data => display_data, o_red => o_vga_red, o_green => o_vga_green, o_blue => o_vga_blue);
 
 end Behavioral;

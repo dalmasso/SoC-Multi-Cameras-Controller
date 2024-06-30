@@ -59,12 +59,10 @@ constant ROM_WIDTH: UNSIGNED(15 downto 0) := X"9600";
 -- Debouncer Output
 signal debounced_filter_mode: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
 
--- RAM (Write Enable)
-signal ram_write_enable: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
-
 -- ROM
 signal rom_addr: UNSIGNED(15 downto 0) := (others => '0');
 signal rom_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
+signal rom_data_valid: STD_LOGIC := '0';
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -76,9 +74,9 @@ begin
 	---------------
 	inst_debouncer : Debouncer generic map (DEBOUNCE_COUNTER_SIZE => 21) port map (i_clock => i_pixel_clock, i_input => i_filter_mode_sw(0), o_output => debounced_filter_mode(0));
 
-	-----------------
-	-- ROM Manager --
-	-----------------
+	-----------------------------------
+	-- ROM Manager (Image to Filter) --
+	-----------------------------------
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
@@ -86,50 +84,27 @@ begin
             -- Reset (No Filter Apply)
             if (debounced_filter_mode = "0") then
                 rom_addr <= (others => '0');
+                rom_data_valid <= '0';
             
-            else
+            elsif (rom_addr < ROM_WIDTH) then
                 -- Applying Filter: Next ROM Addr & Data
-                if (rom_addr < ROM_WIDTH) then
-                    rom_addr <= rom_addr +1;
-                    rom_data <= i_image_to_filter;
-                end if;
-            
+                rom_addr <= rom_addr +1;
+                rom_data <= i_image_to_filter;
+                rom_data_valid <= '1';
+            else
+                rom_data_valid <= '0';
             end if;
+
 		end if;
 	end process;
 
     -- ROM Addr
     o_image_to_filter_addr <= STD_LOGIC_VECTOR(rom_addr);
 
-	--------------------------------
-	-- RAM Manager - Write Enable --
-	--------------------------------
-	process(i_pixel_clock)
-	begin
-		if rising_edge(i_pixel_clock) then
-
-            -- Reset (No Filter Apply)
-            if (debounced_filter_mode = "0") then
-                o_filtered_image_write_enable <= "0";
-            elsif (rom_addr < ROM_WIDTH) then
-                o_filtered_image_write_enable <= "1";
-            else
-                -- End of RAM Write
-                o_filtered_image_write_enable <= "0";
-            end if;
-		end if;
-	end process;
-
-	-----------------
-	-- RAM Manager --
-	-----------------
-	process(i_pixel_clock)
-	begin
-		if rising_edge(i_pixel_clock) then
-            -- Filter 1: Pass Through
-            o_filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr);
-            o_filtered_image_data <= STD_LOGIC_VECTOR(rom_data);
-		end if;
-	end process;
-
+	------------------------------
+	-- RAM Manager (Write Mode) --
+	------------------------------
+    o_filtered_image_write_enable(0) <= rom_data_valid;
+	o_filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr-1) when rom_data_valid = '1' else (others => '0');
+    o_filtered_image_data <= STD_LOGIC_VECTOR(rom_data);
 end Behavioral;
