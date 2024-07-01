@@ -61,8 +61,11 @@ signal debounced_filter_mode: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
 
 -- ROM
 signal rom_addr: UNSIGNED(15 downto 0) := (others => '0');
-signal rom_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 signal rom_data_valid: STD_LOGIC := '0';
+
+-- Filtered Image Outputs
+signal filtered_image_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
+signal filtered_image_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -89,7 +92,6 @@ begin
             elsif (rom_addr < ROM_WIDTH) then
                 -- Applying Filter: Next ROM Addr & Data
                 rom_addr <= rom_addr +1;
-                rom_data <= i_image_to_filter;
                 rom_data_valid <= '1';
             else
                 rom_data_valid <= '0';
@@ -104,7 +106,20 @@ begin
 	------------------------------
 	-- RAM Manager (Write Mode) --
 	------------------------------
+	process(i_pixel_clock)
+	begin
+		if rising_edge(i_pixel_clock) then
+		  
+		  if (rom_data_valid = '1') then
+            -- 1 latency cycles from ROM Read Address to RAM Write Address
+		    filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr-1);
+		    filtered_image_data <= i_image_to_filter;
+		  end if;
+		
+		end if;
+	end process;
+
+    -- RAM Write Enable
     o_filtered_image_write_enable(0) <= rom_data_valid;
-	o_filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr-1) when rom_data_valid = '1' else (others => '0');
-    o_filtered_image_data <= STD_LOGIC_VECTOR(rom_data);
+
 end Behavioral;
