@@ -64,6 +64,7 @@ signal rom_addr: UNSIGNED(15 downto 0) := (others => '0');
 signal rom_data_valid: STD_LOGIC := '0';
 
 -- Filtered Image Outputs
+signal filtered_image_write_enable: STD_LOGIC_VECTOR(0 downto 0) := (others => '0');
 signal filtered_image_addr: STD_LOGIC_VECTOR(15 downto 0) := (others => '0');
 signal filtered_image_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
@@ -109,17 +110,22 @@ begin
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
-		  
-		  if (rom_data_valid = '1') then
-            -- 1 latency cycles from ROM Read Address to RAM Write Address
-		    filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr-1);
-		    filtered_image_data <= i_image_to_filter;
-		  end if;
+			filtered_image_write_enable(0) <= rom_data_valid;
+			
+			if (rom_data_valid = '1') then
+				-- 1 latency cycle from ROM Read Address to RAM Write Address
+				filtered_image_addr <= STD_LOGIC_VECTOR(rom_addr-1);
+				filtered_image_data <= i_image_to_filter;
+			end if;
 		
 		end if;
 	end process;
 
     -- RAM Write Enable
-    o_filtered_image_write_enable(0) <= rom_data_valid;
+    o_filtered_image_write_enable <= filtered_image_write_enable;
+
+	-- RAM Write Address & Data
+	o_filtered_image_addr <= filtered_image_addr;
+	o_filtered_image_data <= filtered_image_data;
 
 end Behavioral;

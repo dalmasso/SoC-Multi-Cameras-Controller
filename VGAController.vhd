@@ -220,9 +220,11 @@ begin
 	-------------------------------
 	-- RAM Memory - Read Address --
 	-------------------------------
-	-- Memory Read Enable (Need to anticipate pixels to pre-load data from memory)
+	-- Read RAM Data: active Image Coordinates AND NOT no Write Operation
+	-- -1: Need to anticipate pixels to pre-load data from memory
 	ram_read_enable <= '1' when (HSW + HBP-1) <= h_counter and h_counter < (HSW + HBP-1 + IMAGE_WIDTH) and h_counter < (HPIXELS - HFP) and 
-								(VSW + VBP) <= v_counter and v_counter < (VSW + VBP + IMAGE_HEIGH) and v_counter < (VLINES - VFP) else '0'; 
+								(VSW + VBP) <= v_counter and v_counter < (VSW + VBP + IMAGE_HEIGH) and v_counter < (VLINES - VFP) and ram_write_enable = "0"
+								else '0'; 
 
 	process(pixel_clock)
 	variable xpix: UNSIGNED(11 downto 0);
@@ -231,15 +233,18 @@ begin
 		if rising_edge(pixel_clock) then
 
 			-- Image Pixel Coordinates (240 x 160)
-			xpix := (h_counter+2) - (HSW + HBP);
-			ypix := v_counter - (VSW + VBP);
+			if (ram_read_enable = '1') then
+				-- Take into account pixels anticipation AND Process latency
+				xpix := (h_counter+2) - (HSW + HBP);
+				ypix := v_counter - (VSW + VBP);
 
-			-- RAM Read Addr (Need to anticipate pixels to pre-load data from memory)
-			ram_read_addr <=  ( "0" & ypix( 7 downto 0 ) & "0000000" )
-							+ ( "00" & ypix( 7 downto 0 ) & "000000" )
-							+ ( "000" & ypix( 7 downto 0 ) & "00000" )
-							+ ( "0000" & ypix( 7 downto 0 ) & "0000" )
-							+ ( "0000000" & xpix( 7 downto 0 ));
+				-- RAM Read Addr
+				ram_read_addr <=  ( "0" & ypix( 7 downto 0 ) & "0000000" )
+								+ ( "00" & ypix( 7 downto 0 ) & "000000" )
+								+ ( "000" & ypix( 7 downto 0 ) & "00000" )
+								+ ( "0000" & ypix( 7 downto 0 ) & "0000" )
+								+ ( "0000000" & xpix( 7 downto 0 ));
+			end if;
 	    end if;
 	end process;
 
@@ -250,7 +255,7 @@ begin
 	begin
 		if rising_edge(pixel_clock) then
 			-- Read RAM Data: active Image Coordinates AND NOT no Write Operation
-			ram_read_data_ready <= ram_read_enable and not(ram_write_enable(0));
+			ram_read_data_ready <= ram_read_enable;
 	    end if;
 	end process;
 

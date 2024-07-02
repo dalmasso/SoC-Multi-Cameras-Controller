@@ -41,11 +41,29 @@ for r=1:height
         img2(r,c,3) = bin2dec([Bb(1:4) '0000']);
         Outbyte = [ Rb(1:4) Gb(1:4) Bb(1:4) ];
         
-        if (Outbyte(1:4) == '0000')
-            fprintf(s,'0%X',bin2dec(Outbyte));
+        if (r==1) || (r==height)
+            Outbyte = [ '0000' '0000' '1111' ];
+            fprintf(s,'00%X',bin2dec(Outbyte));
         else
-            fprintf(s,'%X',bin2dec(Outbyte));
+            if (c==1) || (c==width)
+                Outbyte = [ '0000' '0000' '1111' ];
+                fprintf(s,'%X',bin2dec(Outbyte));
+            else
+                Outbyte = [ '0000' '0000' '1111' ];
+                fprintf(s,'0%X',bin2dec(Outbyte));
+            end
         end
+
+
+        % if (Outbyte(1:8) == '00000000')
+        %     fprintf(s,'00%X',bin2dec(Outbyte));
+        % else
+        %     if (Outbyte(1:4) == '0000')
+        %         fprintf(s,'0%X',bin2dec(Outbyte));
+        %     else
+        %         fprintf(s,'%X',bin2dec(Outbyte));
+        %     end
+        % end
         
         if ((c == width) && (r == height))
             fprintf(s,'%c',';');
