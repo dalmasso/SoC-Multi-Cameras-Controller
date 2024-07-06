@@ -26,7 +26,6 @@ fprintf(s,'%s\n','memory_initialization_vector=');
 cnt = 0;
 
 img2 = img;
-
 for r=1:height
     for c=1:width
         cnt = cnt + 1;
@@ -40,30 +39,31 @@ for r=1:height
         img2(r,c,2) = bin2dec([Gb(1:4) '0000']);
         img2(r,c,3) = bin2dec([Bb(1:4) '0000']);
         Outbyte = [ Rb(1:4) Gb(1:4) Bb(1:4) ];
-        
-        if (r==1) || (r==height)
-            Outbyte = [ '0000' '0000' '1111' ];
-            fprintf(s,'00%X',bin2dec(Outbyte));
-        else
-            if (c==1) || (c==width)
-                Outbyte = [ '0000' '0000' '1111' ];
-                fprintf(s,'%X',bin2dec(Outbyte));
-            else
-                Outbyte = [ '0000' '0000' '1111' ];
-                fprintf(s,'0%X',bin2dec(Outbyte));
-            end
-        end
 
-
-        % if (Outbyte(1:8) == '00000000')
+        % Manual Image
+        % if (r==1) || (r==height)
+        %     Outbyte = [ '0000' '0000' '1111' ];
         %     fprintf(s,'00%X',bin2dec(Outbyte));
         % else
-        %     if (Outbyte(1:4) == '0000')
-        %         fprintf(s,'0%X',bin2dec(Outbyte));
-        %     else
+        %     if (c==1) || (c==width)
+        %         Outbyte = [ '0000' '0000' '1111' ];
         %         fprintf(s,'%X',bin2dec(Outbyte));
+        %     else
+        %         Outbyte = [ '0000' '0000' '1111' ];
+        %         fprintf(s,'0%X',bin2dec(Outbyte));
         %     end
         % end
+
+        % Real Image
+        if (Outbyte(1:8) == '00000000')
+            fprintf(s,'00%X',bin2dec(Outbyte));
+        else
+            if (Outbyte(1:4) == '0000')
+                fprintf(s,'0%X',bin2dec(Outbyte));
+            else
+                fprintf(s,'%X',bin2dec(Outbyte));
+            end
+        end
         
         if ((c == width) && (r == height))
             fprintf(s,'%c',';');
