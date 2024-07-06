@@ -29,7 +29,7 @@ ARCHITECTURE Behavioral of Synchronizer is
 -- Synchronizer
 -- Require Timing Constraints:
 -- set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*]
--- set_max_delay -datapath_only -from [get_cells inst_debouncer/output_reg*] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
+-- set_max_delay -datapath_only -from [get_cells inst_debouncer/output_reg_reg] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
 signal synchronizer_reg1: STD_LOGIC := '0';
 signal synchronizer_reg2: STD_LOGIC := '0';
 

@@ -6,7 +6,10 @@
 --      VGA Controller
 --		Input 	-	i_clock_100: Clock (100MHz)
 --		Input 	-	i_reset: Reset (active low)
---		Input 	-	i_filter_mode_sw: Filter Mode Selector
+--		Input 	-	i_filter_restart: Restart Filter (active high)
+--		Input 	-	i_filter_mode: Filter Modes Selector
+--						'0': Filter 0 (Default: Pass-Through)
+--						'1': Filter 1 (Default: Laplacian)
 --      Output	-	o_hsync: VGA Horizontal Synchronization
 --      Output	-	o_vsync: VGA Vertical Synchronization
 --      Output	-	o_vga_red: VGA Red Signal
@@ -22,7 +25,8 @@ ENTITY VGAController is
 PORT(
 	i_clock_100: IN STD_LOGIC;
     i_reset: IN STD_LOGIC;
-	i_filter_mode_sw: IN STD_LOGIC_VECTOR(0 downto 0);
+	i_filter_restart: IN STD_LOGIC;
+	i_filter_mode: IN STD_LOGIC;
 	o_hsync: OUT STD_LOGIC;
 	o_vsync: OUT STD_LOGIC;
     o_vga_red: OUT STD_LOGIC_VECTOR(3 downto 0);
@@ -64,7 +68,8 @@ END COMPONENT;
 COMPONENT ImageFilter is
 	PORT(
 		i_pixel_clock: IN STD_LOGIC;
-		i_filter_mode_sw: IN STD_LOGIC_VECTOR(0 downto 0);
+		i_restart: IN STD_LOGIC;
+		i_filter_mode: IN STD_LOGIC;
 		i_image_to_filter: IN STD_LOGIC_VECTOR(11 downto 0);
 		o_image_to_filter_addr: OUT STD_LOGIC_VECTOR(15 downto 0);
 		o_filtered_image_write_enable: OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
@@ -264,7 +269,8 @@ begin
 	------------------
 	inst_imageFilter : ImageFilter port map (
 		i_pixel_clock => pixel_clock,
-		i_filter_mode_sw => i_filter_mode_sw,
+		i_restart => i_filter_restart,
+		i_filter_mode => i_filter_mode,
 		i_image_to_filter => rom_data,
 		o_image_to_filter_addr => rom_addr,
 		o_filtered_image_write_enable => ram_write_enable,

@@ -11,15 +11,15 @@ create_clock -period 10.00 -waveform {0 5} [get_ports i_clock_100]
 
 # Synchronizer Clock Domain Crossing signals
 set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*]
-set_max_delay -datapath_only -from [get_cells inst_debouncer/output_reg*] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
+set_max_delay -datapath_only -from [get_cells inst_debouncer/output_reg_reg] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
 
-set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_imageFilter/inst_debouncer/synchronizer_reg*]
-
+# VGA Debouncers
+set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_imageFilter/inst_debouncer_*/synchronizer_reg*]
 
 ## Switches
 ##Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
-set_property PACKAGE_PIN U9 [get_ports {i_filter_mode_sw[0]}]					
-	set_property IOSTANDARD LVCMOS33 [get_ports {i_filter_mode_sw[0]}]
+set_property PACKAGE_PIN U9 [get_ports i_filter_mode]					
+	set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode]
 ##Bank = 34, Pin name = IO_25_34,							Sch name = SW1
 #set_property PACKAGE_PIN U8 [get_ports {sw[1]}]					
 	#set_property IOSTANDARD LVCMOS33 [get_ports {sw[1]}]
@@ -201,17 +201,17 @@ set_property PACKAGE_PIN P2 [get_ports {o_leds[15]}]
 set_property PACKAGE_PIN E16 [get_ports i_reset_btn]						
 	set_property IOSTANDARD LVCMOS33 [get_ports i_reset_btn]
 ##Bank = 15, Pin name = IO_L14P_T2_SRCC_15,					Sch name = BTNU
-#set_property PACKAGE_PIN F15 [get_ports btnU]						
-	#set_property IOSTANDARD LVCMOS33 [get_ports btnU]
+set_property PACKAGE_PIN F15 [get_ports i_filter_restart]						
+	set_property IOSTANDARD LVCMOS33 [get_ports i_filter_restart]
 ##Bank = CONFIG, Pin name = IO_L15N_T2_DQS_DOUT_CSO_B_14,	Sch name = BTNL
-#set_property PACKAGE_PIN T16 [get_ports btnL]						
-	#set_property IOSTANDARD LVCMOS33 [get_ports btnL]
+#set_property PACKAGE_PIN T16 [get_ports i_filter_mode_bps[2]]						
+	#set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode_bps[2]]
 ##Bank = 14, Pin name = IO_25_14,							Sch name = BTNR
-#set_property PACKAGE_PIN R10 [get_ports btnR]						
-	#set_property IOSTANDARD LVCMOS33 [get_ports btnR]
+#set_property PACKAGE_PIN R10 [get_ports i_filter_mode_bps[3]]						
+	#set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode_bps[3]]
 ##Bank = 14, Pin name = IO_L21P_T3_DQS_14,					Sch name = BTND
-#set_property PACKAGE_PIN V10 [get_ports btnD]						
-	#set_property IOSTANDARD LVCMOS33 [get_ports btnD]
+#set_property PACKAGE_PIN V10 [get_ports i_filter_mode_bps[1]]						
+	#set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode_bps[1]]
  
 
 
