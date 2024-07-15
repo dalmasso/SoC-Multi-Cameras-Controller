@@ -6,7 +6,7 @@
 --      Shift single LED on left to right then right to left
 --		Input 	-	i_clock_100: Clock (100MHz)
 --		Input 	-	i_clock_enable: Clock Enable (active high)
---		Input 	-	i_reset: Reset (active low)
+--		Input 	-	i_reset: Reset ('0': NO Reset, '1': Reset)
 --      Output	-	o_leds: 16 LEDs
 ------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ begin
 	process(i_clock_100)
 	begin
 		if rising_edge(i_clock_100) then
-			if (i_reset = '0') then
+			if (i_reset = '1') then
 				shift_order <= '0';
 			else
 				if chained_leds(15) = '1' then
@@ -62,7 +62,7 @@ begin
 	process(i_clock_100)
 	begin
 		if rising_edge(i_clock_100) then
-			if (i_reset = '0') then
+			if (i_reset = '1') then
 				chained_leds <= (others => '0');
 			elsif (i_clock_enable = '1') then
 				if shift_order = '0' then

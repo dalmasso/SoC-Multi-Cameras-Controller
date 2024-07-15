@@ -11,8 +11,8 @@ function img2 = imageConverter(imgfile, outfile)
 % img2 = IMG2coe8('image.jpg', 'image.coe');
 
 img = imread(imgfile);
-height = 160;% size(img, 1);
-width = 240; %size(img, 2);
+height = ize(img, 1);
+width = size(img, 2);
 
 s = fopen(outfile,'wb'); %opens the output file
 
@@ -41,16 +41,21 @@ for r=1:height
         Outbyte = [ Rb(1:4) Gb(1:4) Bb(1:4) ];
 
         % Manual Image
-        % if (r==1) || (r==height)
-        %     Outbyte = [ '0000' '0000' '1111' ];
-        %     fprintf(s,'00%X',bin2dec(Outbyte));
+        % if (r==1)
+        %     Outbyte = [ '1111' '1111' '1111' ];
+        %     fprintf(s,'%X',bin2dec(Outbyte));
         % else
-        %     if (c==1) || (c==width)
-        %         Outbyte = [ '0000' '0000' '1111' ];
-        %         fprintf(s,'%X',bin2dec(Outbyte));
-        %     else
-        %         Outbyte = [ '0000' '0000' '1111' ];
+        %     if (r==height)
+        %         Outbyte = [ '0000' '1111' '0000' ];
         %         fprintf(s,'0%X',bin2dec(Outbyte));
+        %     else
+        %         if (c==1) || (c==width)
+        %             Outbyte = [ '1111' '0000' '0000' ];
+        %             fprintf(s,'%X',bin2dec(Outbyte));
+        %         else
+        %             Outbyte = [ '0000' '0000' '1111' ];
+        %             fprintf(s,'00%X',bin2dec(Outbyte));
+        %         end
         %     end
         % end
 

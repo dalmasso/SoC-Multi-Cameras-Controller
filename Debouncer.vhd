@@ -4,6 +4,7 @@
 -- Module Name: Debouncer
 -- Description:
 --      Debounce the input signal
+--		Generic -	DEBOUNCE_COUNTER_SIZE: Counter Size (Default: 20)
 --		Input 	-	i_clock: Clock
 --		Input 	-	i_input: Input to debounce
 --      Output	-	o_output: Debounced input
