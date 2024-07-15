@@ -9,12 +9,13 @@ set_property PACKAGE_PIN E3 [get_ports i_clock_100]
 set_property IOSTANDARD LVCMOS33 [get_ports i_clock_100]
 create_clock -period 10.00 -waveform {0 5} [get_ports i_clock_100] 
 
-# Synchronizer Clock Domain Crossing signals
+# VGA Synchronizer
 set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*]
-set_max_delay -datapath_only -from [get_cells inst_debouncer/output_reg_reg] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
+set_max_delay -datapath_only -from [get_cells inst_debouncer_reset_btn/output_reg_reg] -to [get_cells inst_vgaController/inst_synchronizer/synchronizer_reg*] 13.468
 
-# VGA Debouncers
-set_property ASYNC_REG TRUE [get_cells inst_vgaController/inst_imageFilter/inst_debouncer_*/synchronizer_reg*]
+# ImageFilter Synchronizer
+set_property ASYNC_REG TRUE [get_cells inst_imageFilter/inst_synchronizer_filter_mode/synchronizer_reg*]
+set_max_delay -datapath_only -from [get_cells inst_debouncer_filter_mode/output_reg_reg] -to [get_cells inst_imageFilter/inst_synchronizer_filter_mode/synchronizer_reg*] 13.468
 
 ## Switches
 ##Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
@@ -201,8 +202,8 @@ set_property PACKAGE_PIN P2 [get_ports {o_leds[15]}]
 set_property PACKAGE_PIN E16 [get_ports i_reset_btn]						
 	set_property IOSTANDARD LVCMOS33 [get_ports i_reset_btn]
 ##Bank = 15, Pin name = IO_L14P_T2_SRCC_15,					Sch name = BTNU
-set_property PACKAGE_PIN F15 [get_ports i_filter_restart]						
-	set_property IOSTANDARD LVCMOS33 [get_ports i_filter_restart]
+#set_property PACKAGE_PIN F15 [get_ports i_filter_restart]						
+	#set_property IOSTANDARD LVCMOS33 [get_ports i_filter_restart]
 ##Bank = CONFIG, Pin name = IO_L15N_T2_DQS_DOUT_CSO_B_14,	Sch name = BTNL
 #set_property PACKAGE_PIN T16 [get_ports i_filter_mode_bps[2]]						
 	#set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode_bps[2]]
