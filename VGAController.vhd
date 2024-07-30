@@ -6,9 +6,11 @@
 --      VGA Controller (1920x1080 60Hz)
 --		Input 	-	i_pixel_clock: Pixel Clock (148.5 MHz)
 --		Input 	-	i_reset: Reset ('0': NO Reset, '1': Reset)
+--		Input 	-	i_sync: VGA Synchronization ('0': Waiting Synchronization, '1': Synchronization)
 --		Input 	-	i_image_data_empty: Image Data Empty ('0': NOT empty, '1': Empty)
 --		Input 	-	i_image_data: Image Data
 --		Output 	-	o_next_image_data: Request Next Image Data
+--		Output 	-	o_reset_image_data: Reset Image Data
 --      Output	-	o_hsync: VGA Horizontal Synchronization
 --      Output	-	o_vsync: VGA Vertical Synchronization
 --      Output	-	o_vga_red: VGA Red Signal
@@ -23,10 +25,12 @@ USE IEEE.NUMERIC_STD.ALL;
 ENTITY VGAController is
 PORT(
 	i_pixel_clock: IN STD_LOGIC;
-    i_reset: IN STD_LOGIC;
+	i_reset: IN STD_LOGIC;
+	i_sync: IN STD_LOGIC;
 	i_image_data_empty: IN STD_LOGIC;
 	i_image_data: IN STD_LOGIC_VECTOR(11 downto 0);
 	o_next_image_data: OUT STD_LOGIC;
+	o_reset_image_data: OUT STD_LOGIC;
 	o_hsync: OUT STD_LOGIC;
 	o_vsync: OUT STD_LOGIC;
     o_vga_red: OUT STD_LOGIC_VECTOR(3 downto 0);
@@ -83,9 +87,15 @@ constant VSW: UNSIGNED(3 downto 0) := X"5";
 -- Vertical Lines (1125 lines)
 constant VLINES: UNSIGNED(11 downto 0) := X"465";
 
+-- FIFO Image Data preparation (time required to write the image into the FIFO & the FIFO size: Reset at the end of line 39)
+constant PREPARE_RESET_IMAGE_DATA_LINE: UNSIGNED(7 downto 0) := X"28";
+
 ------------------------------------------------------------------------
 -- Signal Declarations
 ------------------------------------------------------------------------
+-- Initialization State
+signal initialization_state: STD_LOGIC := '1';
+
 -- Horizontal Counter
 signal h_counter: UNSIGNED(11 downto 0) := (others => '0');
 
@@ -106,13 +116,29 @@ signal image_data_to_display: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 -- Module Implementation
 ------------------------------------------------------------------------
 begin
+
+	----------------------------
+	-- Initialization Manager --
+	----------------------------
+	process(i_pixel_clock)
+	begin
+		if rising_edge(i_pixel_clock) then
+            if (i_reset = '1') then
+                initialization_state <= '1';
+
+            elsif (initialization_state = '1') and (i_sync = '1') then
+				initialization_state <= '0';
+            end if;
+		end if;
+	end process;
+
 	------------------------
 	-- Horizontal Counter --
 	------------------------
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
-            if (i_reset = '1') or (h_counter = HPIXELS -1) then
+            if (initialization_state = '1') or (h_counter = HPIXELS -1) then
                 h_counter <= (others => '0');
                 v_counter_enable <= '1';
             else
@@ -128,7 +154,7 @@ begin
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
-		    if (i_reset = '1') then
+		    if (initialization_state = '1') then
 				v_counter <= (others => '0');
 		    elsif (v_counter_enable = '1') then
                 if (v_counter = VLINES -1) then
@@ -153,9 +179,21 @@ begin
 							(VSW + VBP) <= v_counter and v_counter < (VSW + VBP + IMAGE_HEIGH) and v_counter < (VLINES - VFP)
 							else '0';
 
-	----------------
-	-- Image Data --
-	----------------
+	------------------------
+	-- Image Data Manager --
+	------------------------
+	-- Reset Image Data ('0': No Reset, '1': Reset)
+	process(i_pixel_clock)
+	begin
+		if rising_edge(i_pixel_clock) then
+			if (v_counter < PREPARE_RESET_IMAGE_DATA_LINE) then
+				o_reset_image_data <= '1';
+			else
+				o_reset_image_data <= '0';
+			end if;
+	    end if;
+	end process;
+
 	-- Read Next Image Data
 	next_image_data <= '1' when i_image_data_empty = '0' and image_enable = '1' else '0';
 
