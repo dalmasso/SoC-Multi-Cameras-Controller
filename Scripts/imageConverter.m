@@ -11,7 +11,7 @@ function img2 = imageConverter(imgfile, outfile)
 % img2 = IMG2coe8('image.jpg', 'image.coe');
 
 img = imread(imgfile);
-height = ize(img, 1);
+height = size(img, 1);
 width = size(img, 2);
 
 s = fopen(outfile,'wb'); %opens the output file

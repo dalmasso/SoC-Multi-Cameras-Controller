@@ -13,17 +13,13 @@ create_clock -period 10.00 -waveform {0 5} [get_ports i_clock_100]
 set_max_delay -datapath_only -from [get_cells inst_debouncerResetBtn/output_reg_reg] -to [get_cells inst_synchronizerVGAReset/synchronizer_reg1_reg] 13.468
 set_property ASYNC_REG TRUE [get_cells inst_synchronizerVGAReset/synchronizer_reg*]
 
-# Synchronizer OV7670 Reset Read
-set_max_delay -datapath_only -from [get_cells inst_vgaController/o_reset_image_data_reg] -to [get_cells inst_synchronizerOV7670ReadReset/synchronizer_reg1_reg] 46.296
-set_property ASYNC_REG TRUE [get_cells inst_synchronizerOV7670ReadReset/synchronizer_reg*]
-
 ## Switches
 ##Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
-set_property PACKAGE_PIN U9 [get_ports i_filter_mode]					
-	set_property IOSTANDARD LVCMOS33 [get_ports i_filter_mode]
+set_property PACKAGE_PIN U9 [get_ports {i_filter_mode[0]}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {i_filter_mode[0]}]
 ##Bank = 34, Pin name = IO_25_34,							Sch name = SW1
-#set_property PACKAGE_PIN U8 [get_ports {sw[1]}]					
-	#set_property IOSTANDARD LVCMOS33 [get_ports {sw[1]}]
+set_property PACKAGE_PIN U8 [get_ports {i_filter_mode[1]}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {i_filter_mode[1]}]
 ##Bank = 34, Pin name = IO_L23P_T3_34,						Sch name = SW2
 #set_property PACKAGE_PIN R7 [get_ports {sw[2]}]					
 	#set_property IOSTANDARD LVCMOS33 [get_ports {sw[2]}]
@@ -221,8 +217,8 @@ set_property PACKAGE_PIN E16 [get_ports i_reset_btn]
 set_property PACKAGE_PIN B13 [get_ports {i_ov7670_vsync}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {i_ov7670_vsync}]
 ##Bank = 15, Pin name = IO_L5N_T0_AD9N_15,					Sch name = JA2
-#set_property PACKAGE_PIN F14 [get_ports {i_ov7670_hsync}]					
-	#set_property IOSTANDARD LVCMOS33 [get_ports {i_ov7670_hsync}]
+set_property PACKAGE_PIN F14 [get_ports {i_ov7670_href}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {i_ov7670_href}]
 ##Bank = 15, Pin name = IO_L16N_T2_A27_15,					Sch name = JA3
 set_property PACKAGE_PIN D17 [get_ports {o_ov7670_write_image_reset}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_write_image_reset}]
