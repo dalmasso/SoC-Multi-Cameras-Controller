@@ -60,20 +60,7 @@ begin
     ---------------------------
 	-- End of Filter Manager --
 	---------------------------
-	process(i_clock)
-	begin
-		if rising_edge(i_clock) then
-
-            -- Reset End of Filter
-            if (in_progress_reg1 = '1') or (in_progress_reg2 = '1') then
-				o_end_of_filter <= '0';
-
-            else
-                -- End of Filter
-				o_end_of_filter <= '1';
-            end if;
-        end if;
-    end process;
+	o_end_of_filter <= not(in_progress_reg1) and not(in_progress_reg2);
 
     --------------------------
 	-- Luma Trigger Manager --
@@ -82,14 +69,14 @@ begin
 	begin
 		if rising_edge(i_clock) then
 
-            -- Luma Trigger
-            if (in_progress_reg1 = '1') or (in_progress_reg2 = '1') then
-                lumaTrigger <= not(lumaTrigger);
-
-            else
-                -- Reset Luma Trigger
-                lumaTrigger <= '0';
-            end if;
+			-- Reset Luma Trigger
+			if (i_image_data_enable = '0') then
+				lumaTrigger <= '0';
+			
+			elsif (in_progress_reg1 = '1') then
+				-- Luma Trigger
+				lumaTrigger <= not(lumaTrigger);
+			end if;
         end if;
     end process;
 

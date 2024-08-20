@@ -58,9 +58,8 @@ END COMPONENT;
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- Waiting OV7670 FIFO Almost Full: 393 216 8-bit Pixel Data, Last FIFO Data Index: 393 215)
--- Trigger at: 393 215 @12MHz =x2.133..=> 838 824 -100 = 838 724 @25.6MHz
-constant OV7670_FIFO_ALMOST_FULL: UNSIGNED(19 downto 0) := X"CCC44";
+-- Handle OV7670 FIFO Read/Write Collision (Start Read after 138 240 Write Clock Cycles)
+constant OV7670_READ_WRITE_FIFO_SYNC: UNSIGNED(19 downto 0) := X"21C00";
 
 -- OV7670 Total Pixel Data of Image (614 400 Pixel Data => Last Pixel: 614 399)
 constant TOTAL_PIXELS: UNSIGNED(19 downto 0) := X"95FFF";
@@ -69,10 +68,10 @@ constant TOTAL_PIXELS: UNSIGNED(19 downto 0) := X"95FFF";
 -- Signal Declarations
 ------------------------------------------------------------------------
 -- OV7670 Controller Clock
-signal clock_25M: STD_LOGIC := '0';
+signal clock_12M: STD_LOGIC := '0';
 
 -- OV7670 Controller State Machine
-TYPE ov7670ControllerState is (SYNC_OV7670, WAITING_IMAGE_START, WAITING_FIFO_ALMOST_FULL, RESET_PIXEL_COUNTER, GET_IMAGE);
+TYPE ov7670ControllerState is (SYNC_OV7670, WAITING_IMAGE_START, READ_WRITE_FIFO_SYNC, RESET_PIXEL_COUNTER, GET_IMAGE);
 signal state: ov7670ControllerState := SYNC_OV7670;
 signal next_state: ov7670ControllerState;
 signal pixel_counter: UNSIGNED(19 downto 0) := (others => '0');
@@ -100,15 +99,15 @@ begin
 	------------------------------------
 	-- OV7670 Master Clock (25.6 MHz) --
 	------------------------------------
-	inst_ov7670ControllerClock : ov7670_fifo_clock_gen port map (clk_out1 => clock_25M, clk_in1 => i_pixel_clock);
+	inst_ov7670ControllerClock : ov7670_fifo_clock_gen port map (clk_out1 => clock_12M, clk_in1 => i_pixel_clock);
 
 	-------------------------------------
 	-- OV7670 Controller State Machine --
 	-------------------------------------
 	-- OV7670 Controller State
-	process(clock_25M)
+	process(clock_12M)
 	begin
-		if rising_edge(clock_25M) then
+		if rising_edge(clock_12M) then
 			state <= next_state;
 		end if;
 	end process;
@@ -126,16 +125,16 @@ begin
 
 			when WAITING_IMAGE_START =>
 									if (i_ov7670_href = '1') then
-										next_state <= WAITING_FIFO_ALMOST_FULL;
+										next_state <= READ_WRITE_FIFO_SYNC;
 									else
 										next_state <= WAITING_IMAGE_START;
 									end if;
 
-			when WAITING_FIFO_ALMOST_FULL =>
-									if (pixel_counter = OV7670_FIFO_ALMOST_FULL) then
+			when READ_WRITE_FIFO_SYNC =>
+									if (pixel_counter = OV7670_READ_WRITE_FIFO_SYNC) then
 										next_state <= RESET_PIXEL_COUNTER;
 									else
-										next_state <= WAITING_FIFO_ALMOST_FULL;
+										next_state <= READ_WRITE_FIFO_SYNC;
 									end if;
 
 			when RESET_PIXEL_COUNTER => next_state <= GET_IMAGE;
@@ -154,16 +153,16 @@ begin
 	-------------------------------------
 	-- OV7670 Controller State Counter --
 	-------------------------------------
-	process(i_ov7670_vsync, clock_25M)
+	process(i_ov7670_vsync, clock_12M)
 	begin
-		if rising_edge(clock_25M) then
+		if rising_edge(clock_12M) then
 
 			-- Reset Pixel Counter
 			if (state = WAITING_IMAGE_START) or (state = RESET_PIXEL_COUNTER)then
 				pixel_counter <= (others => '0');
 
 			-- Increment Pixel Counter
-			elsif ((state = WAITING_FIFO_ALMOST_FULL) and (i_ov7670_href = '1')) or (state = GET_IMAGE) then
+			elsif (state = READ_WRITE_FIFO_SYNC) or (state = GET_IMAGE) then
 				pixel_counter <= pixel_counter +1;
 			end if;
 
@@ -174,46 +173,24 @@ begin
 	-- OV7670 FIFO - Read Image Manager --
 	--------------------------------------
 	-- OV7670 FIFO Read Clock
-	o_ov7670_fifo_read_clock <= clock_25M;
-
-	-- OV7670 FIFO Read Enable
-	process(clock_25M)
-	begin
-		if rising_edge(clock_25M) then
-			if (state = GET_IMAGE) then
-				ov7670_fifo_read_enable <= '1';
-			else
-				ov7670_fifo_read_enable <= '0';
-			end if;
-		end if;
-	end process;
+	o_ov7670_fifo_read_clock <= clock_12M;
 
 	-- OV7670 FIFO Read Enable ('0': Enable, '1': Disable)
 	o_ov7670_fifo_read_enable <= '0';
 
 	-- OV7670 FIFO Read Reset ('0': Reset, '1': No Reset)
-	o_ov7670_fifo_read_reset <= ov7670_fifo_read_enable;
+	o_ov7670_fifo_read_reset <= '1' when state = RESET_PIXEL_COUNTER or state = GET_IMAGE else '0';
 
 	--------------------------
 	-- Image Output Manager --
 	--------------------------
 	-- Image Output Clock
-	o_image_output_clock <= clock_25M;
+	o_image_output_clock <= clock_12M;
 
-	-- Image Output Data Enable (Handle 1 Cycle Latency)
-	process(clock_25M)
-	begin
-		if rising_edge(clock_25M) then
-			o_image_output_data_enable <= ov7670_fifo_read_enable;
-		end if;
-	end process;
+	-- Image Output Data Enable ('0': Disable, '1': Enable)
+	o_image_output_data_enable <= '1' when state = GET_IMAGE else '0';
 
 	-- Image Output Data
-	process(clock_25M)
-	begin
-		if rising_edge(clock_25M) then
-			o_image_output_data <= i_ov7670_fifo_read_data;
-		end if;
-	end process;
+	o_image_output_data <= i_ov7670_fifo_read_data;
 
 end Behavioral;

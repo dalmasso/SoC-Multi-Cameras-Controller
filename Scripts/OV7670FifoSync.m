@@ -1,42 +1,100 @@
-% W Freq: 12 MHz
-% Before W: 3+17 Lines * 784 pixels = 15 680 cycles
-% W: 480 Lines * 784 pixels = 376 320 cycles
-% After W: 10 Lines * 784 pixels = 7 840 cycles
-% Total W: 399 840 cycles
-
-% R Freq: 24 MHz -> ((392000 * 2) - 307200) /2 (--> R = R+2)
-% R Freq: 43.20 MHz -> ((392000 * 4) - 307200) /4 (--> R = R+4)
-% R Freq: 148.5 MHz -> ((392000 * 13) - 307200) /13 (--> R = R+13)
-
 clear;
-close();
-before_write = 15680;
-image_pixel = 376320;
-after_write = 7840;
-total_pixel = before_write + image_pixel + after_write;
 
-read_image_pixel = 307200;
-read_factor = 4;
-read_start_trig = (((total_pixel * read_factor) - read_image_pixel)/ read_factor);
+% Image Definition
+image_width = 640;
+image_height = 480;
+image_href_sync = 144; % @ 6MHz
 
+% Write @ 12 MHz
+write_line_data = image_width *2;
+write_line = (image_width + image_href_sync) *2;
+% No HREF Sync for the last Line (@12MHz)
+write_image = (write_line * image_height) - (2*image_href_sync);
+
+% Read @ 12 MHz
+read_line = image_width *2;
+read_image = read_line * image_height;
+read_wait = write_image + (2*image_href_sync) - read_image;
+
+% FIFO
+fifo_max_addr = 393216;
+
+cycle = 1;
+write_sync = 0;
+writeAddrRaw=1;readAddrRaw=1;
 writeAddr=1;readAddr=1;
-for i=1:(total_pixel)
+for i=1:write_image-1
 
-    disp("====");
-    disp(i);
-    disp(writeAddr);
-    disp(readAddr);
+    disp("==========");
+    fprintf('i:%d\n', i);
+    fprintf('W:%d\t\traw:%d\n', writeAddr, writeAddrRaw);
+    fprintf('R:%d\t\traw:%d\n', readAddr, readAddrRaw);
 
-    if (i > before_write) && (i < total_pixel-after_write)
-        writeAddr = writeAddr+1;
-    end;
-
-    if (i > read_start_trig)
-        readAddr = readAddr+read_factor;
-    end;
-
-    if (writeAddr ~= 1) && ((readAddr >= writeAddr) || (readAddr > read_image_pixel))
+    % Verify Write & Read Collision
+    if (i ~= 1) && (readAddr == writeAddr)
         disp("!!!!!!!!");
         pause();
     end;
+
+    % Increment Read Addr
+    if (i > read_wait)
+
+        % Reset FIFO Read Addr
+        if (readAddr == fifo_max_addr)
+            readAddr = 1;
+        else
+            readAddr = readAddr+1;
+        end;
+
+        % Increment Raw Read Addr
+        readAddrRaw = readAddrRaw +1;
+    end;
+
+    % Increment Write Addr
+    if ((mod(i, write_line) > 0) && (mod(i, write_line) <= write_line_data))
+        
+        % Reset FIFO Write Addr
+        if (writeAddr == fifo_max_addr)
+            writeAddr = 1;
+        else
+            writeAddr = writeAddr+1;
+        end;
+
+         % Increment Raw Write Addr
+        writeAddrRaw = writeAddrRaw +1;
+
+        % Reset Write Image Sync
+        write_sync = 0;
+
+    else
+        % Write Image Sync
+        write_sync = write_sync +1;
+        fprintf('Waiting ............... (%d)\n', write_sync);
+    end;
+
+    cycle = i;
+end;
+
+disp("=======================");
+disp("===== End of Read =====")
+disp("=======================");
+
+% End of Read
+for i=readAddrRaw:read_image
+    disp("==========");
+    fprintf('i:%d\n', cycle);
+    fprintf('W:%d\t\traw:%d\n', writeAddr, writeAddrRaw);
+    fprintf('R:%d\t\traw:%d\n', readAddr, readAddrRaw);
+
+    % Reset FIFO Read Addr
+    if (readAddr == fifo_max_addr)
+        readAddr = 1;
+    else
+        readAddr = readAddr+1;
+    end;
+
+    % Increment Raw Read Addr
+    readAddrRaw = readAddrRaw +1;
+
+    cycle = cycle +1;
 end;

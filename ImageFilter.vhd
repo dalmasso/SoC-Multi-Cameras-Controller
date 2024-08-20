@@ -4,7 +4,7 @@
 -- Module Name: ImageFilter
 -- Description:
 --      Image Filter
---		Input 	-	i_image_data_clock: Image Data Clock (25.6 MHz)
+--		Input 	-	i_image_data_clock: Image Data Clock
 --		Input 	-	i_image_data_enable: Image Data Enable ('0': Disable, '1': Enable)
 --		Input 	-	i_image_data: Image Data (8-bit, Format: YUV 4:2:2, Sequence: U0 Y0 V0 Y1)
 --		Input 	-	i_filter_mode: Select Filter Modes
@@ -127,16 +127,9 @@ begin
 			if (ram_write_reset = '1') then
 				ram_write_addr <= (others => '0');
 
-			-- Write Data Enable
-			elsif (ram_write_enable = "1") then
-
-				if (ram_write_addr = RAM_MAX_ADDR) then
-					-- Reset Write Address
-					ram_write_addr <= (others => '0');
-				else
-					-- Increment Write Address
-					ram_write_addr <= ram_write_addr +1;
-				end if;
+			-- Increment Write Address
+			elsif (ram_write_enable = "1") and (ram_write_addr < RAM_MAX_ADDR) then
+				ram_write_addr <= ram_write_addr +1;
 			end if;
         end if;
     end process;
@@ -162,11 +155,11 @@ begin
 		if rising_edge(i_pixel_clock) then
 			
 			-- Reset Read Address
-			if (i_read_reset = '1') or (ram_read_addr = RAM_MAX_ADDR) then
+			if (i_read_reset = '1') then
 				ram_read_addr <= (others => '0');
 
-			elsif (i_read_pixel_data = '1') then
-				-- Increment Read Address
+			-- Increment Read Address
+			elsif (i_read_pixel_data = '1') and (ram_read_addr < RAM_MAX_ADDR) then
 				ram_read_addr <= ram_read_addr +1;
 			end if;
         end if;
