@@ -134,9 +134,9 @@ begin
         end if;
     end process;
 
-	--------------------------------------------
-	-- Dual-Port RAM Memory (READ_FIRST Mode) --
-	--------------------------------------------
+	---------------------------------------------
+	-- Dual-Port RAM Memory (WRITE_FIRST Mode) --
+	---------------------------------------------
 	inst_dualPortRamMemory : dual_port_ram_memory port map (
 		clka => i_image_data_clock,
 		wea => ram_write_enable,
@@ -155,11 +155,11 @@ begin
 		if rising_edge(i_pixel_clock) then
 			
 			-- Reset Read Address
-			if (i_read_reset = '1') then
+			if (i_read_reset = '1') or (ram_read_addr = RAM_MAX_ADDR) then
 				ram_read_addr <= (others => '0');
 
 			-- Increment Read Address
-			elsif (i_read_pixel_data = '1') and (ram_read_addr < RAM_MAX_ADDR) then
+			elsif (i_read_pixel_data = '1') then
 				ram_read_addr <= ram_read_addr +1;
 			end if;
         end if;

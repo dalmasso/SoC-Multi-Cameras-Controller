@@ -107,9 +107,11 @@ begin
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
+
             if (i_reset = '1') or (h_counter = HPIXELS -1) then
                 h_counter <= (others => '0');
                 v_counter_enable <= '1';
+
             else
                 h_counter <= h_counter +1;
                 v_counter_enable <= '0';
@@ -123,14 +125,18 @@ begin
 	process(i_pixel_clock)
 	begin
 		if rising_edge(i_pixel_clock) then
+
 		    if (i_reset = '1') then
 				v_counter <= (others => '0');
+
 		    elsif (v_counter_enable = '1') then
+
                 if (v_counter = VLINES -1) then
 					v_counter <= (others => '0');
                 else
                     v_counter <= v_counter +1;
                 end if;
+
             end if;
 		end if;
 	end process;

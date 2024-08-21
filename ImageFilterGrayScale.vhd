@@ -41,6 +41,9 @@ signal in_progress_reg2: STD_LOGIC := '0';
 -- Image Luma Trigger
 signal lumaTrigger: STD_LOGIC := '0';
 
+-- Filtered Data Enable
+signal filtered_data_enable: STD_LOGIC := '0';
+
 ------------------------------------------------------------------------
 -- Module Implementation
 ------------------------------------------------------------------------
@@ -70,29 +73,30 @@ begin
 		if rising_edge(i_clock) then
 
 			-- Reset Luma Trigger
-			if (i_image_data_enable = '0') then
+			if (i_image_data_enable = '0') or (in_progress_reg1 = '0') then
 				lumaTrigger <= '0';
 			
-			elsif (in_progress_reg1 = '1') then
+			else
 				-- Luma Trigger
 				lumaTrigger <= not(lumaTrigger);
 			end if;
         end if;
     end process;
 
-	----------------------
-	-- Luma Data Enable --
-	----------------------
+	--------------------------
+	-- Filtered Data Enable --
+	--------------------------
 	process(i_clock)
 	begin
 		if rising_edge(i_clock) then
-            o_filtered_data_enable <= lumaTrigger;
+            filtered_data_enable <= lumaTrigger;
         end if;
     end process;
+	o_filtered_data_enable <= filtered_data_enable;
 
-	---------------
-	-- Luma Data --
-	---------------
+	-------------------
+	-- Filtered Data --
+	-------------------
 	process(i_clock)
 	begin
 		if rising_edge(i_clock) then

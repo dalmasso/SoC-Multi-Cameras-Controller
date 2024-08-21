@@ -58,8 +58,8 @@ END COMPONENT;
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- Handle OV7670 FIFO Read/Write Collision (Start Read after 138 240 Write Clock Cycles)
-constant OV7670_READ_WRITE_FIFO_SYNC: UNSIGNED(19 downto 0) := X"21C00";
+-- Handle OV7670 FIFO Read/Write Collision (Start Read after 138 240-1 Write Clock Cycles)
+constant OV7670_READ_WRITE_FIFO_SYNC: UNSIGNED(19 downto 0) := X"21BFF";
 
 -- OV7670 Total Pixel Data of Image (614 400 Pixel Data => Last Pixel: 614 399)
 constant TOTAL_PIXELS: UNSIGNED(19 downto 0) := X"95FFF";
@@ -75,12 +75,6 @@ TYPE ov7670ControllerState is (SYNC_OV7670, WAITING_IMAGE_START, READ_WRITE_FIFO
 signal state: ov7670ControllerState := SYNC_OV7670;
 signal next_state: ov7670ControllerState;
 signal pixel_counter: UNSIGNED(19 downto 0) := (others => '0');
-
--- OV7670 FIFO Read Controller
-signal ov7670_fifo_read_enable: STD_LOGIC := '0';
-
--- Image Output Controller
-signal image_output_data_enable: STD_LOGIC := '0';
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -140,10 +134,10 @@ begin
 			when RESET_PIXEL_COUNTER => next_state <= GET_IMAGE;
 
 			when GET_IMAGE =>
-									if (pixel_counter < TOTAL_PIXELS) then
-										next_state <= GET_IMAGE;
-									else
+									if (pixel_counter = TOTAL_PIXELS) then
 										next_state <= WAITING_IMAGE_START;
+									else
+										next_state <= GET_IMAGE;
 									end if;
 
 			when others => next_state <= SYNC_OV7670;
@@ -153,19 +147,18 @@ begin
 	-------------------------------------
 	-- OV7670 Controller State Counter --
 	-------------------------------------
-	process(i_ov7670_vsync, clock_12M)
+	process(clock_12M)
 	begin
 		if rising_edge(clock_12M) then
 
-			-- Reset Pixel Counter
-			if (state = WAITING_IMAGE_START) or (state = RESET_PIXEL_COUNTER)then
-				pixel_counter <= (others => '0');
-
 			-- Increment Pixel Counter
-			elsif (state = READ_WRITE_FIFO_SYNC) or (state = GET_IMAGE) then
+			if (state = READ_WRITE_FIFO_SYNC) or (state = GET_IMAGE) then
 				pixel_counter <= pixel_counter +1;
+			
+			else
+				-- Reset Pixel Counter
+				pixel_counter <= (others => '0');
 			end if;
-
 		end if;
 	end process;
 
