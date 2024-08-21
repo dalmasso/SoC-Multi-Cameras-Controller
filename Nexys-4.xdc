@@ -9,9 +9,15 @@ set_property PACKAGE_PIN E3 [get_ports i_clock_100]
 set_property IOSTANDARD LVCMOS33 [get_ports i_clock_100]
 create_clock -period 10.00 -waveform {0 5} [get_ports i_clock_100] 
 
-# Synchronizer VGA Reset
+# VGA Reset Synchronizer
 set_max_delay -datapath_only -from [get_cells inst_debouncerResetBtn/output_reg_reg] -to [get_cells inst_synchronizerVGAReset/synchronizer_reg1_reg] 13.468
 set_property ASYNC_REG TRUE [get_cells inst_synchronizerVGAReset/synchronizer_reg*]
+
+# Filter Mode Synchronizers
+set_max_delay -datapath_only -from [get_cells generate_debouncerFilterModes[0].inst_debouncerFilterModes/output_reg_reg] -to [get_cells generate_synchronizerFilterModes[0].inst_synchronizerFilterModes/synchronizer_reg1_reg] 166.666
+set_max_delay -datapath_only -from [get_cells generate_debouncerFilterModes[1].inst_debouncerFilterModes/output_reg_reg] -to [get_cells generate_synchronizerFilterModes[1].inst_synchronizerFilterModes/synchronizer_reg1_reg] 166.666
+set_property ASYNC_REG TRUE [get_cells generate_synchronizerFilterModes[0].inst_synchronizerFilterModes/synchronizer_reg*]
+set_property ASYNC_REG TRUE [get_cells generate_synchronizerFilterModes[1].inst_synchronizerFilterModes/synchronizer_reg*]
 
 ## Switches
 ##Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0

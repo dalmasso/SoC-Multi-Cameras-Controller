@@ -185,6 +185,7 @@ signal read_next_image_data: STD_LOGIC := '0';
 
 -- Image Filter
 signal debounced_filter_mode: STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
+signal synchronized_filter_mode: STD_LOGIC_VECTOR(1 downto 0) := (others => '0');
 signal filtered_image_data: STD_LOGIC_VECTOR(11 downto 0) := (others => '0');
 
 -- OV7670 Controller
@@ -211,9 +212,9 @@ begin
 		o_clock_tick_1 => clock_tick_out_1,
 		o_clock_tick_25M => clock_tick_out_25M);
 
-	-----------------------------
-	-- Debouncer - i_reset_btn --
-	-----------------------------
+	----------------------------
+	-- Reset Button Debouncer --
+	----------------------------
 	inst_debouncerResetBtn : Debouncer generic map (DEBOUNCE_COUNTER_SIZE => 20) port map (
 		i_clock => i_clock_100,
 		i_input => i_reset_btn,
@@ -233,9 +234,9 @@ begin
 	---------------------------------
 	inst_vgaPixelClock : vga_pixel_clock port map (clk_out1 => pixel_clock_148M, clk_in1 => i_clock_100);
 
-	------------------------------------------------
-	-- Synchronized (VGA Reset) - debounced_reset --
-	------------------------------------------------
+	----------------------------
+	-- VGA Reset Synchronizer --
+	----------------------------
 	inst_synchronizerVGAReset : Synchronizer port map (
 		i_domain_clock => pixel_clock_148M,
 		i_input => debounced_reset,
@@ -255,15 +256,25 @@ begin
 		o_vga_green => o_vga_green,
 		o_vga_blue => o_vga_blue);
 
-	-------------------------------
-	-- Debouncer - i_filter_mode --
-	-------------------------------
+	----------------------------
+	-- Filter Mode Debouncers --
+	----------------------------
 	generate_debouncerFilterModes: for i in 0 to 1 generate
 		inst_debouncerFilterModes : Debouncer generic map (DEBOUNCE_COUNTER_SIZE => 20) port map (
-			i_clock => image_data_clock,
+			i_clock => i_clock_100,
 			i_input => i_filter_mode(i),
 			o_output => debounced_filter_mode(i));
   	end generate generate_debouncerFilterModes;
+
+	-------------------------------
+	-- Filter Mode Synchronizers --
+	-------------------------------
+	generate_synchronizerFilterModes: for i in 0 to 1 generate
+		inst_synchronizerFilterModes : Synchronizer port map (
+			i_domain_clock => image_data_clock,
+			i_input => debounced_filter_mode(i),
+			o_output => synchronized_filter_mode(i));
+	end generate generate_synchronizerFilterModes;
 
 	------------------
 	-- Image Filter --
@@ -272,7 +283,7 @@ begin
 		i_image_data_clock => image_data_clock,
 		i_image_data_enable => image_data_enable,
 		i_image_data => image_data,
-		i_filter_mode => debounced_filter_mode,
+		i_filter_mode => synchronized_filter_mode,
 		i_pixel_clock => pixel_clock_148M,
 		i_read_reset => synchronized_vga_reset,
 		i_read_pixel_data => read_next_image_data,
