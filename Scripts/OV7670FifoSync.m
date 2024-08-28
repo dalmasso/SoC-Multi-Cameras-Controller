@@ -31,7 +31,7 @@ for i=1:write_image-1
     fprintf('R:%d\t\traw:%d\n', readAddr, readAddrRaw);
 
     % Verify Write & Read Collision
-    if (i ~= 1) && (readAddr == writeAddr)
+    if (i > read_wait) && (abs(readAddrRaw-writeAddrRaw) <= 128)
         disp("!!!!!!!!");
         pause();
     end;

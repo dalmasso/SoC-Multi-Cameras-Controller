@@ -35,14 +35,10 @@ ARCHITECTURE Behavioral of ImageFilterGrayScale is
 -- Signal Declarations
 ------------------------------------------------------------------------
 -- Filter In Progress
-signal in_progress_reg1: STD_LOGIC := '0';
-signal in_progress_reg2: STD_LOGIC := '0';
+signal in_progress: STD_LOGIC := '0';
 
 -- Image Luma Trigger
 signal lumaTrigger: STD_LOGIC := '0';
-
--- Filtered Data Enable
-signal filtered_data_enable: STD_LOGIC := '0';
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -55,15 +51,14 @@ begin
 	process(i_clock)
 	begin
 		if rising_edge(i_clock) then
-            in_progress_reg1 <= i_clock_enable and i_image_data_enable;
-			in_progress_reg2 <= in_progress_reg1;
+            in_progress <= i_clock_enable and i_image_data_enable;
         end if;
     end process;
 
     ---------------------------
 	-- End of Filter Manager --
 	---------------------------
-	o_end_of_filter <= not(in_progress_reg1) and not(in_progress_reg2);
+	o_end_of_filter <= not(in_progress);
 
     --------------------------
 	-- Luma Trigger Manager --
@@ -73,7 +68,7 @@ begin
 		if rising_edge(i_clock) then
 
 			-- Reset Luma Trigger
-			if (i_image_data_enable = '0') or (in_progress_reg1 = '0') then
+			if (i_image_data_enable = '0') or (in_progress = '0')then
 				lumaTrigger <= '0';
 			
 			else
@@ -86,23 +81,12 @@ begin
 	--------------------------
 	-- Filtered Data Enable --
 	--------------------------
-	process(i_clock)
-	begin
-		if rising_edge(i_clock) then
-            filtered_data_enable <= lumaTrigger;
-        end if;
-    end process;
-	o_filtered_data_enable <= filtered_data_enable;
+	o_filtered_data_enable <= lumaTrigger;
 
 	-------------------
 	-- Filtered Data --
 	-------------------
-	process(i_clock)
-	begin
-		if rising_edge(i_clock) then
-			-- Luma Data: Convert 8-bits to 3*4-bits (÷16: >> 4)
-			o_filtered_data <= i_image_data(7 downto 4) & i_image_data(7 downto 4) & i_image_data(7 downto 4);
-        end if;
-    end process;
+	-- Luma Data: Convert 8-bits to 3*4-bits (÷16: >> 4)
+	o_filtered_data <= i_image_data(7 downto 4) & i_image_data(7 downto 4) & i_image_data(7 downto 4);
 
 end Behavioral;

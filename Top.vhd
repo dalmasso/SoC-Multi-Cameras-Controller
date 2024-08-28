@@ -140,7 +140,8 @@ END COMPONENT;
 
 COMPONENT OV7670FifoController is
 	PORT(
-		i_pixel_clock: IN STD_LOGIC;
+		i_clock_100: IN STD_LOGIC;
+		i_reset: IN STD_LOGIC;
 		-- OV7670 Synchronizations
 		i_ov7670_vsync: IN STD_LOGIC;
 		i_ov7670_href: IN STD_LOGIC;
@@ -293,7 +294,8 @@ begin
 	-- OV7670 Controller (with embedded FIFO) --
 	--------------------------------------------
 	inst_OV7670FifoController : OV7670FifoController port map (
-        i_pixel_clock => pixel_clock_148M,
+        i_clock_100 => i_clock_100,
+		i_reset => debounced_reset,
         i_ov7670_vsync => i_ov7670_vsync,
 		i_ov7670_href => i_ov7670_href,
         o_ov7670_fifo_write_reset => o_ov7670_write_image_reset,

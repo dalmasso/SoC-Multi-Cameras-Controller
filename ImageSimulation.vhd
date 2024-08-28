@@ -75,7 +75,7 @@ begin
 	end process;
 
 	-- Image Data
-	process(image_addr)
+	process(image_addr, image_selector)
 	begin			
 		-- First Pixel
 		if (image_addr = "0000000000000000000")  then
