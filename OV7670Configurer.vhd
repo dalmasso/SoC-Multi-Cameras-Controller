@@ -45,11 +45,7 @@ constant TRANSMISSION_NEXT_PHASE: UNSIGNED(4 downto 0) := "11001";
 constant TRANSMISSION_DONT_CARE_BIT: STD_LOGIC := '0';
 
 -- OV7670 SCCB Write Address (0x42 + Don't Care bit)
-constant OV7670_WRITE_ADDR: STD_LOGIC_VECTOR(8 downto 0) := X"42" & TRANSMISSION_DONT_CARE_BIT;
-
--- OV7670 SCCB Register: Reset Address & Value (+ Don't Care bit)
-constant REGISTER_RESET_ADDR: STD_LOGIC_VECTOR(8 downto 0) := X"12" & TRANSMISSION_DONT_CARE_BIT;
-constant REGISTER_RESET_VALUE: STD_LOGIC_VECTOR(8 downto 0) := X"80" & TRANSMISSION_DONT_CARE_BIT;
+constant OV7670_WRITE_ADDR: STD_LOGIC_VECTOR(8 downto 0) := X"21" & TRANSMISSION_DONT_CARE_BIT;
 
 -- OV7670 SCCB Register: HSTART Address & Value (156) (+ Don't Care bit)
 constant REGISTER_HSTART_ADDR: STD_LOGIC_VECTOR(8 downto 0) := X"17" & TRANSMISSION_DONT_CARE_BIT;
@@ -67,7 +63,7 @@ constant REGISTER_HREF_VALUE: STD_LOGIC_VECTOR(8 downto 0) := X"B6" & TRANSMISSI
 -- Signal Declarations
 ------------------------------------------------------------------------
 -- OV7670 SCCB State Machine
-TYPE ov7670SCCBState is (IDLE, WRITE_RESET_LOAD, WRITE_RESET, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD, WRITE_HSTOP, WRITE_HREF_LOAD, WRITE_HREF, END_OF_CONFIG);
+TYPE ov7670SCCBState is (IDLE, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD, WRITE_HSTOP, WRITE_HREF_LOAD, WRITE_HREF, END_OF_CONFIG);
 signal state: ov7670SCCBState := IDLE;
 signal next_state: ov7670SCCBState;
 
@@ -137,15 +133,8 @@ begin
 	begin
 
 		case state is
-			when IDLE => next_state <= WRITE_RESET_LOAD;
+			when IDLE => next_state <= WRITE_HSTART_LOAD;
 
-			when WRITE_RESET_LOAD => next_state <= WRITE_RESET;
-            when WRITE_RESET =>
-									if (bit_counter = TRANSMISSION_NEXT_PHASE) then
-										next_state <= WRITE_HSTART_LOAD;
-									else
-										next_state <= WRITE_RESET;
-									end if;
 			when WRITE_HSTART_LOAD => next_state <= WRITE_HSTART;
             when WRITE_HSTART =>
 									if (bit_counter = TRANSMISSION_NEXT_PHASE) then
@@ -183,7 +172,7 @@ begin
 		if rising_edge(i_clock_12M) then
 
 			-- Restart Counter
-			if (state = WRITE_RESET_LOAD) or (state = WRITE_HSTART_LOAD) or (state = WRITE_HSTOP_LOAD) or (state = WRITE_HREF_LOAD) then
+			if (state = WRITE_HSTART_LOAD) or (state = WRITE_HSTOP_LOAD) or (state = WRITE_HREF_LOAD) then
 				bit_counter <= (others => '0');
 				
 			elsif (ov7670_scl_enable = '1') then
@@ -229,13 +218,12 @@ begin
 
 				case state is	
 					-- Load States
-					when WRITE_RESET_LOAD => ov7670_sda_reg <= OV7670_WRITE_ADDR & REGISTER_RESET_ADDR & REGISTER_RESET_VALUE;
 					when WRITE_HSTART_LOAD => ov7670_sda_reg <= OV7670_WRITE_ADDR & REGISTER_HSTART_ADDR & REGISTER_HSTART_VALUE;
 					when WRITE_HSTOP_LOAD => ov7670_sda_reg <= OV7670_WRITE_ADDR & REGISTER_HSTOP_ADDR & REGISTER_HSTOP_VALUE;
 					when WRITE_HREF_LOAD => ov7670_sda_reg <= OV7670_WRITE_ADDR & REGISTER_HREF_ADDR & REGISTER_HREF_VALUE;
 
 					-- Shift States
-					when WRITE_RESET | WRITE_HSTART | WRITE_HSTOP | WRITE_HREF => ov7670_sda_reg <= ov7670_sda_reg(25 downto 0) & '0';
+					when WRITE_HSTART | WRITE_HSTOP | WRITE_HREF => ov7670_sda_reg <= ov7670_sda_reg(25 downto 0) & '0';
 
 					-- Reset States
 					when others => ov7670_sda_reg <= (others => '1');
