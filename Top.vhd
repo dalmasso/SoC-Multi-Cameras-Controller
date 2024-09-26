@@ -25,11 +25,12 @@
 -- OV7670 Camera
 --		Input 	-	i_ov7670_vsync: OV7670 Vertical Synchronization ('0': No Image, '1': Active Image)
 --		Input 	-	i_ov7670_href: OV7670 Horizontal Synchronization ('0': No Image Data, '1': Image Data available)
+--		Output 	-	o_ov7670_scl: OV7670 Configuration - Serial Interface Clock
+--		Output 	-	o_ov7670_sda: OV7670 Configuration - Serial Interface Data
+--		Output 	-	o_ov7670_reset: OV7670 Configuration - Reset All Registers ('0': Reset, '1': No Reset)
 --		Output 	-	o_ov7670_write_image_reset: OV7670 FIFO Image Write Reset
---		Output 	-	o_ov7670_write_image_enable: OV7670 FIFO Image Write Enable
 --		Output 	-	o_ov7670_read_clock: OV7670 FIFO Image Read Clock
 --		Output 	-	o_ov7670_read_image_reset: OV7670 FIFO Image Read Reset
---		Output 	-	o_ov7670_read_image_enable: OV7670 FIFO Image Read Enable
 --		Input 	-	i_ov7670_read_image_data: OV7670 FIFO Image Data (Default Format: YUV 4:2:2, Sequence: U0 Y0 V0 Y1)
 ------------------------------------------------------------------------
 
@@ -54,11 +55,12 @@ PORT(
     -- OV7670 Sensor
     i_ov7670_vsync: IN STD_LOGIC;
 	i_ov7670_href: IN STD_LOGIC;
+	o_ov7670_scl: OUT STD_LOGIC;
+	o_ov7670_sda: OUT STD_LOGIC;
+	o_ov7670_reset: OUT STD_LOGIC;
     o_ov7670_write_image_reset: OUT STD_LOGIC;
-    o_ov7670_write_image_enable: OUT STD_LOGIC;
     o_ov7670_read_clock: OUT STD_LOGIC;
     o_ov7670_read_image_reset: OUT STD_LOGIC;
-    o_ov7670_read_image_enable: OUT STD_LOGIC;
     i_ov7670_read_image_data: IN STD_LOGIC_VECTOR(7 downto 0)
 );
 END Top;
@@ -142,18 +144,15 @@ COMPONENT OV7670FifoController is
 	PORT(
 		i_clock_100: IN STD_LOGIC;
 		i_reset: IN STD_LOGIC;
-		-- OV7670 Synchronizations
 		i_ov7670_vsync: IN STD_LOGIC;
 		i_ov7670_href: IN STD_LOGIC;
-		-- OV7670 Embedded FIFO Write Controller
+		o_ov7670_scl: OUT STD_LOGIC;
+		o_ov7670_sda: OUT STD_LOGIC;
+		o_ov7670_reset: OUT STD_LOGIC;
 		o_ov7670_fifo_write_reset: OUT STD_LOGIC;
-		o_ov7670_fifo_write_enable: OUT STD_LOGIC;
-		-- OV7670 Embedded FIFO Read Controller
 		o_ov7670_fifo_read_clock: OUT STD_LOGIC;
 		o_ov7670_fifo_read_reset: OUT STD_LOGIC;
-		o_ov7670_fifo_read_enable: OUT STD_LOGIC;
 		i_ov7670_fifo_read_data: IN STD_LOGIC_VECTOR(7 downto 0);
-		-- Image Data Output
 		o_image_output_clock: OUT STD_LOGIC;
 		o_image_output_data_enable: OUT STD_LOGIC;
 		o_image_output_data: OUT STD_LOGIC_VECTOR(7 downto 0)
@@ -298,11 +297,12 @@ begin
 		i_reset => debounced_reset,
         i_ov7670_vsync => i_ov7670_vsync,
 		i_ov7670_href => i_ov7670_href,
+		o_ov7670_scl => o_ov7670_scl,
+		o_ov7670_sda => o_ov7670_sda,
+		o_ov7670_reset => o_ov7670_reset,
         o_ov7670_fifo_write_reset => o_ov7670_write_image_reset,
-        o_ov7670_fifo_write_enable => o_ov7670_write_image_enable,
         o_ov7670_fifo_read_clock => o_ov7670_read_clock,
         o_ov7670_fifo_read_reset => o_ov7670_read_image_reset,
-        o_ov7670_fifo_read_enable => o_ov7670_read_image_enable,
         i_ov7670_fifo_read_data => i_ov7670_read_image_data,
 		o_image_output_clock => image_data_clock,
 		o_image_output_data_enable => image_data_enable,

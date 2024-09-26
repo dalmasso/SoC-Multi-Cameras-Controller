@@ -19,6 +19,10 @@ set_max_delay -datapath_only -from [get_cells generate_debouncerFilterModes[1].i
 set_property ASYNC_REG TRUE [get_cells generate_synchronizerFilterModes[0].inst_synchronizerFilterModes/synchronizer_reg*]
 set_property ASYNC_REG TRUE [get_cells generate_synchronizerFilterModes[1].inst_synchronizerFilterModes/synchronizer_reg*]
 
+# OV7670 FIFO Controller Reset Synchronizer
+set_max_delay -datapath_only -from [get_cells inst_debouncerResetBtn/output_reg_reg] -to [get_cells inst_OV7670FifoController/inst_ov7670SynchronizerReset/synchronizer_reg1_reg] 166.666
+set_property ASYNC_REG TRUE [get_cells inst_OV7670FifoController/inst_ov7670SynchronizerReset/synchronizer_reg*]
+
 ## Switches
 ##Bank = 34, Pin name = IO_L21P_T3_DQS_34,					Sch name = SW0
 set_property PACKAGE_PIN U9 [get_ports {i_filter_mode[0]}]					
@@ -229,20 +233,20 @@ set_property PACKAGE_PIN F14 [get_ports {i_ov7670_href}]
 set_property PACKAGE_PIN D17 [get_ports {o_ov7670_write_image_reset}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_write_image_reset}]
 ##Bank = 15, Pin name = IO_L16P_T2_A28_15,					Sch name = JA4
-set_property PACKAGE_PIN E17 [get_ports {o_ov7670_write_image_enable}]					
-	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_write_image_enable}]
-##Bank = 15, Pin name = IO_0_15,								Sch name = JA7
-set_property PACKAGE_PIN G13 [get_ports {o_ov7670_read_clock}]					
+set_property PACKAGE_PIN E17 [get_ports {o_ov7670_read_clock}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_read_clock}]
-##Bank = 15, Pin name = IO_L20N_T3_A19_15,					Sch name = JA8
-set_property PACKAGE_PIN C17 [get_ports {o_ov7670_read_image_reset}]					
+##Bank = 15, Pin name = IO_0_15,								Sch name = JA7
+set_property PACKAGE_PIN G13 [get_ports {o_ov7670_read_image_reset}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_read_image_reset}]
+##Bank = 15, Pin name = IO_L20N_T3_A19_15,					Sch name = JA8
+set_property PACKAGE_PIN C17 [get_ports {o_ov7670_scl}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_scl}]
 ##Bank = 15, Pin name = IO_L21N_T3_A17_15,					Sch name = JA9
-set_property PACKAGE_PIN D18 [get_ports {o_ov7670_read_image_enable}]					
-	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_read_image_enable}]
+set_property PACKAGE_PIN D18 [get_ports {o_ov7670_sda}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_sda}]
 ##Bank = 15, Pin name = IO_L21P_T3_DQS_15,					Sch name = JA10
-#set_property PACKAGE_PIN E18 [get_ports {JA[7]}]					
-	#set_property IOSTANDARD LVCMOS33 [get_ports {JA[7]}]
+set_property PACKAGE_PIN E18 [get_ports {o_ov7670_reset}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_reset}]
 
 
 
