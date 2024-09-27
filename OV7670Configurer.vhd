@@ -63,7 +63,7 @@ constant REGISTER_HREF_VALUE: STD_LOGIC_VECTOR(8 downto 0) := X"B6" & TRANSMISSI
 -- Signal Declarations
 ------------------------------------------------------------------------
 -- OV7670 SCCB State Machine
-TYPE ov7670SCCBState is (IDLE, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD, WRITE_HSTOP, WRITE_HREF_LOAD, WRITE_HREF, END_OF_CONFIG);
+TYPE ov7670SCCBState is (IDLE, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD, WRITE_HSTOP, WRITE_HREF_LOAD, WRITE_HREF, END_OF_TRANSMISSION, END_OF_CONFIG);
 signal state: ov7670SCCBState := IDLE;
 signal next_state: ov7670SCCBState;
 
@@ -82,9 +82,9 @@ signal bit_counter: UNSIGNED(4 downto 0) := (others => '0');
 -- Module Implementation
 ------------------------------------------------------------------------
 begin
-	-----------------------
-	-- OV7670 SCCB Clock --
-	-----------------------
+	----------------------------------------
+	-- OV7670 SCCB Clock Enable & Divider --
+	----------------------------------------
 	process(i_clock_12M)
 	begin
 		if rising_edge(i_clock_12M) then
@@ -154,11 +154,12 @@ begin
 			when WRITE_HREF_LOAD => next_state <= WRITE_HREF;
             when WRITE_HREF =>
 									if (bit_counter = TRANSMISSION_NEXT_PHASE) then
-										next_state <= END_OF_CONFIG;
+										next_state <= END_OF_TRANSMISSION;
 									else
 										next_state <= WRITE_HREF;
 									end if;
 
+			when END_OF_TRANSMISSION => next_state <= END_OF_CONFIG;
             when END_OF_CONFIG => next_state <= END_OF_CONFIG;
 			when others => next_state <= IDLE;
 		end case;
@@ -194,8 +195,8 @@ begin
 	begin
 		if rising_edge(i_clock_12M) then
 
-			-- Reset SCL
-			if (i_reset = '1') then
+			-- Reset SCL (Reset or SDA Not Ready)
+			if (i_reset = '1') or (state = IDLE) or (state = WRITE_HSTART_LOAD) or (state = END_OF_CONFIG) then
 				ov7670_scl <= '0';
 
 			-- Invert SCL
