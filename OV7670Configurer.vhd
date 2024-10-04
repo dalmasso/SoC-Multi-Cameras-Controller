@@ -7,7 +7,7 @@
 --		Input 	-	i_clock_12M: Clock (12MHz)
 --		Input 	-	i_reset: Reset ('0': NO Reset, '1': Reset)
 --		Output 	-	o_end_of_config: End of OV7670 Configuration process ('0': In Progress, '1': End of Configuration)
---		Output 	-	o_ov7670_scl: OV7670 Serial Clock (400KHz)
+--		Output 	-	o_ov7670_scl: OV7670 Serial Clock (187.5kHz)
 --		Output 	-	o_ov7670_sda: OV7670 Serial Data
 --		Output 	-	o_ov7670_reset: OV7670 Configuration - Reset All Registers ('0': Reset, '1': No Reset)
 ------------------------------------------------------------------------
@@ -61,7 +61,7 @@ TYPE ov7670SCCBState is (IDLE, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD
 signal state: ov7670SCCBState := IDLE;
 signal next_state: ov7670SCCBState;
 
--- OV7670 SCCB Clock Divider (12MHz -> 187.5KHz Clock: 64 --> 6 bits)
+-- OV7670 SCCB Clock Divider (12MHz -> 187.5kHz Clock: 64 --> 6 bits)
 signal ov7670_scl_divider: UNSIGNED(5 downto 0) := (others => '0');
 signal ov7670_scl_divider_last_bit: STD_LOGIC := '0';
 signal ov7670_scl_enable: STD_LOGIC := '0';
