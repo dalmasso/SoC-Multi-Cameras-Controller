@@ -84,14 +84,17 @@ END COMPONENT;
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- Handle OV7670 FIFO Read/Write Collision (Start Read after the 138 240 Clock Cycles)
+-- Handle OV7670 FIFO Read/Write Collision (Start Read after the 138 239th Clock Cycles)
 constant OV7670_READ_WRITE_FIFO_SYNC: UNSIGNED(19 downto 0) := X"21BFF";
 
--- OV7670 Remaining Pixel Data of Image:
+-- OV7670 End of Image Write (after the 614 082th Clock Cyles)
+constant END_OF_IMAGE_WRITE: UNSIGNED(19 downto 0) := X"95EC2";
+
+-- OV7670 Remaining Pixel Data of Image to Read:
 -- Total Pixel Data: 614 400
 -- Last Pixel Data: 614 399
--- Remaining Pixel Data: 614 398
-constant REMAINING_PIXELS: UNSIGNED(19 downto 0) := X"95FFE";
+-- Remaining Pixel Data to Read: 614 398
+constant REMAINING_PIXELS_TO_READ: UNSIGNED(19 downto 0) := X"95FFE";
 
 ------------------------------------------------------------------------
 -- Signal Declarations
@@ -112,7 +115,7 @@ signal pixel_counter: UNSIGNED(19 downto 0) := (others => '0');
 signal image_output_data_enable: STD_LOGIC := '0';
 
 -- OV7670 End of Configuration
-signal ov7670_end_config: STD_LOGIC := '1';
+signal ov7670_end_config: STD_LOGIC := '0';
 
 ------------------------------------------------------------------------
 -- Module Implementation
@@ -123,7 +126,7 @@ begin
 	-- OV7670 FIFO - Write Manager --
 	---------------------------------
 	-- OV7670 FIFO Write Reset ('0': Reset, '1': No Reset)
-	o_ov7670_fifo_write_reset <= not(i_ov7670_vsync);
+	o_ov7670_fifo_write_reset <= '0' when i_ov7670_vsync = '1' or pixel_counter >= END_OF_IMAGE_WRITE else '1';
 
 	------------------------------------
 	-- OV7670 Master Clock (12 MHz) --
@@ -193,7 +196,7 @@ begin
 			when GET_FIRST_IMAGE_DATA => next_state <= GET_REMAINING_IMAGE_DATA;
 
 			when GET_REMAINING_IMAGE_DATA =>
-									if (pixel_counter = REMAINING_PIXELS) then
+									if (pixel_counter = REMAINING_PIXELS_TO_READ) then
 										next_state <= WAITING_IMAGE_START;
 									else
 										next_state <= GET_REMAINING_IMAGE_DATA;
