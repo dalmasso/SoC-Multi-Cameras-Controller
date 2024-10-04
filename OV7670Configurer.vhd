@@ -32,12 +32,6 @@ ARCHITECTURE Behavioral of OV7670Configurer is
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- OV7670 SCCB Clock Enable (12MHz -> 400KHz Pulse: 30 counter -1)
-constant OV7670_SCCB_CLOCK_ENABLE: UNSIGNED(4 downto 0) := "11101";
-
--- OV7670 SCCB Clock Divider (12Hz -> 400KHz Clock: 30/2 counter -1)
-constant OV7670_SCCB_CLOCK_DIVIDER: UNSIGNED(3 downto 0) := "1110";
-
 -- OV7670 SCCB Transmission Next Phase (3x9 = 27-1 bits - 1 for anticipation)
 constant TRANSMISSION_NEXT_PHASE: UNSIGNED(4 downto 0) := "11001";
 
@@ -67,13 +61,14 @@ TYPE ov7670SCCBState is (IDLE, WRITE_HSTART_LOAD, WRITE_HSTART, WRITE_HSTOP_LOAD
 signal state: ov7670SCCBState := IDLE;
 signal next_state: ov7670SCCBState;
 
--- OV7670 SCCB Clock
-signal ov7670_scl_divider: UNSIGNED(7 downto 0) := (others => '0');
+-- OV7670 SCCB Clock Divider (12MHz -> 187.5KHz Clock: 64 --> 6 bits)
+signal ov7670_scl_divider: UNSIGNED(5 downto 0) := (others => '0');
+signal ov7670_scl_divider_last_bit: STD_LOGIC := '0';
 signal ov7670_scl_enable: STD_LOGIC := '0';
-signal ov7670_scl: STD_LOGIC := '0';
+signal ov7670_scl: STD_LOGIC := '1';
 
 -- OV7670 SCCB Data (MUST be set to '1' when unused)
-signal ov7670_sda_reg: STD_LOGIC_VECTOR(26 downto 0) := (others => '1');
+signal ov7670_sda_reg: STD_LOGIC_VECTOR(26 downto 0) := (others => '0');
 
 -- OV7670 SCCB Transmission Bit Counter
 signal bit_counter: UNSIGNED(4 downto 0) := (others => '0');
@@ -82,31 +77,45 @@ signal bit_counter: UNSIGNED(4 downto 0) := (others => '0');
 -- Module Implementation
 ------------------------------------------------------------------------
 begin
-	----------------------------------------
-	-- OV7670 SCCB Clock Enable & Divider --
-	----------------------------------------
+
+	-------------------------------
+	-- OV7670 SCCB Clock Divider --
+	-------------------------------
 	process(i_clock_12M)
 	begin
 		if rising_edge(i_clock_12M) then
 
-			-- Reset Clock Divider & Clock Enable
+			-- Reset Clock Divider
 			if (i_reset = '1') then
 				ov7670_scl_divider <= (others => '0');
-				ov7670_scl_enable <= '0';
 
-			-- Reset Clock Divider & Set Clock Enable
-			elsif (ov7670_scl_divider = OV7670_SCCB_CLOCK_ENABLE) then
-				ov7670_scl_divider <= (others => '0');
-				ov7670_scl_enable <= '1';
-			
-			-- Increment Clock Divier & Reset Clock Enable
+			-- Increment Clock Divier
 			else
 				ov7670_scl_divider <= ov7670_scl_divider +1;
-				ov7670_scl_enable <= '0';
 			end if;
 		end if;
 	end process;
 
+	------------------------------
+	-- OV7670 SCCB Clock Enable --
+	------------------------------
+	process(i_clock_12M)
+	begin
+		if rising_edge(i_clock_12M) then
+
+			-- Last SCL Divider bit
+			ov7670_scl_divider_last_bit <= ov7670_scl_divider(5);
+
+			-- Reset Clock Enable
+			if (i_reset = '1') then
+				ov7670_scl_enable <= '0';
+			
+			-- Set Clock Enable (detect Rising Edge)
+			else
+				ov7670_scl_enable <= not(ov7670_scl_divider_last_bit) and ov7670_scl_divider(5);
+			end if;
+		end if;
+	end process;
 
 	-------------------------------
 	-- OV7670 SCCB State Machine --
@@ -188,6 +197,11 @@ begin
 	--------------------------------------
 	o_end_of_config <= '1' when state = END_OF_CONFIG else '0';
 
+	--------------------------------
+	-- OV7670 Reset Configuration --
+	--------------------------------
+	o_ov7670_reset <= '0' when state = IDLE else '1';
+
 	------------------------------
 	-- OV7670 SCCB Output Clock --
 	------------------------------
@@ -196,20 +210,24 @@ begin
 		if rising_edge(i_clock_12M) then
 
 			-- Reset SCL (Reset or SDA Not Ready)
-			if (i_reset = '1') or (state = IDLE) or (state = WRITE_HSTART_LOAD) or (state = END_OF_CONFIG) then
+			if (state = IDLE) or (state = END_OF_CONFIG) then
+				ov7670_scl <= '1';
+			
+			-- Init SCL
+			elsif (state = WRITE_HSTART_LOAD) then
 				ov7670_scl <= '0';
 
-			-- Invert SCL
-			elsif (ov7670_scl_divider = "00000") or (ov7670_scl_divider = OV7670_SCCB_CLOCK_DIVIDER) then
-				ov7670_scl <= not(ov7670_scl);
+			-- SCL Clock
+			else
+				ov7670_scl <= ov7670_scl_divider_last_bit;
 			end if;
 		end if;
 	end process;
 	o_ov7670_scl <= ov7670_scl;
 
-	--------------------------------------
-	-- OV7670 SCCB Output Data Register --
-	--------------------------------------
+	-----------------------------
+	-- OV7670 SCCB Output Data --
+	-----------------------------
 	process(i_clock_12M)
 	begin
 		if rising_edge(i_clock_12M) then
@@ -227,20 +245,11 @@ begin
 					when WRITE_HSTART | WRITE_HSTOP | WRITE_HREF => ov7670_sda_reg <= ov7670_sda_reg(25 downto 0) & '0';
 
 					-- Reset States
-					when others => ov7670_sda_reg <= (others => '1');
+					when others => ov7670_sda_reg <= (others => '0');
 				end case;
 			end if;
 		end if;
 	end process;
-
-	-----------------------------
-	-- OV7670 SCCB Output Data --
-	-----------------------------
 	o_ov7670_sda <= ov7670_sda_reg(26);
-
-	--------------------------------
-	-- OV7670 Reset Configuration --
-	--------------------------------
-	o_ov7670_reset <= '0' when state = IDLE else '1';
 
 end Behavioral;
