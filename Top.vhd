@@ -26,8 +26,7 @@
 --		Input 	-	i_ov7670_vsync: OV7670 Vertical Synchronization ('0': No Image, '1': Active Image)
 --		Input 	-	i_ov7670_href: OV7670 Horizontal Synchronization ('0': No Image Data, '1': Image Data available)
 --		Output 	-	o_ov7670_scl: OV7670 Configuration - Serial Interface Clock
---		Output 	-	o_ov7670_sda: OV7670 Configuration - Serial Interface Data
---		Output 	-	o_ov7670_reset: OV7670 Configuration - Reset All Registers ('0': Reset, '1': No Reset)
+--		In/Out 	-	io_ov7670_sda: OV7670 Configuration - Serial Interface Data
 --		Output 	-	o_ov7670_write_image_reset: OV7670 FIFO Image Write Reset
 --		Output 	-	o_ov7670_read_clock: OV7670 FIFO Image Read Clock
 --		Output 	-	o_ov7670_read_image_reset: OV7670 FIFO Image Read Reset
@@ -56,8 +55,7 @@ PORT(
     i_ov7670_vsync: IN STD_LOGIC;
 	i_ov7670_href: IN STD_LOGIC;
 	o_ov7670_scl: OUT STD_LOGIC;
-	o_ov7670_sda: OUT STD_LOGIC;
-	o_ov7670_reset: OUT STD_LOGIC;
+	io_ov7670_sda: INOUT STD_LOGIC;
     o_ov7670_write_image_reset: OUT STD_LOGIC;
     o_ov7670_read_clock: OUT STD_LOGIC;
     o_ov7670_read_image_reset: OUT STD_LOGIC;
@@ -147,8 +145,7 @@ COMPONENT OV7670FifoController is
 		i_ov7670_vsync: IN STD_LOGIC;
 		i_ov7670_href: IN STD_LOGIC;
 		o_ov7670_scl: OUT STD_LOGIC;
-		o_ov7670_sda: OUT STD_LOGIC;
-		o_ov7670_reset: OUT STD_LOGIC;
+		io_ov7670_sda: INOUT STD_LOGIC;
 		o_ov7670_fifo_write_reset: OUT STD_LOGIC;
 		o_ov7670_fifo_read_clock: OUT STD_LOGIC;
 		o_ov7670_fifo_read_reset: OUT STD_LOGIC;
@@ -298,8 +295,7 @@ begin
         i_ov7670_vsync => i_ov7670_vsync,
 		i_ov7670_href => i_ov7670_href,
 		o_ov7670_scl => o_ov7670_scl,
-		o_ov7670_sda => o_ov7670_sda,
-		o_ov7670_reset => o_ov7670_reset,
+		io_ov7670_sda => io_ov7670_sda,
         o_ov7670_fifo_write_reset => o_ov7670_write_image_reset,
         o_ov7670_fifo_read_clock => o_ov7670_read_clock,
         o_ov7670_fifo_read_reset => o_ov7670_read_image_reset,
