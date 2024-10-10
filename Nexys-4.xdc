@@ -242,8 +242,8 @@ set_property PACKAGE_PIN G13 [get_ports {o_ov7670_read_image_reset}]
 set_property PACKAGE_PIN C17 [get_ports {o_ov7670_scl}]					
 	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_scl}]
 ##Bank = 15, Pin name = IO_L21N_T3_A17_15,					Sch name = JA9
-set_property PACKAGE_PIN D18 [get_ports {o_ov7670_sda}]					
-	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_sda}]
+set_property PACKAGE_PIN D18 [get_ports {io_ov7670_sda}]					
+	set_property IOSTANDARD LVCMOS33 [get_ports {io_ov7670_sda}]
 ##Bank = 15, Pin name = IO_L21P_T3_DQS_15,					Sch name = JA10
 #set_property PACKAGE_PIN E18 [get_ports {o_ov7670_reset}]					
 #	set_property IOSTANDARD LVCMOS33 [get_ports {o_ov7670_reset}]
