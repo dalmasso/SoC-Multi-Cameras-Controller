@@ -72,12 +72,11 @@ END COMPONENT;
 COMPONENT SCCBController is
 	PORT(
 		i_clock: IN STD_LOGIC;
-		i_reset: IN STD_LOGIC;
 		i_mode: IN STD_LOGIC;
-		i_start: IN STD_LOGIC;
 		i_addr: IN STD_LOGIC_VECTOR(7 downto 0);
 		i_reg_addr: IN STD_LOGIC_VECTOR(7 downto 0);
 		i_reg_value: IN STD_LOGIC_VECTOR(7 downto 0);
+		i_start: IN STD_LOGIC;
 		o_ready: OUT STD_LOGIC;
 		o_read_value_valid: OUT STD_LOGIC;
 		o_read_value: OUT STD_LOGIC_VECTOR(7 downto 0);
@@ -233,12 +232,11 @@ begin
 	----------------------------
 	inst_sccbConfigurer : SCCBController port map (
 		i_clock => clock_12M,
-		i_reset => synchronized_reset,
 		i_mode => '1',
-		i_start => ov7670_sccb_start,
 		i_addr => OV7670_WRITE_ADDR,
 		i_reg_addr => ov7670_sccb_reg_addr,
 		i_reg_value => ov7670_sccb_reg_value,
+		i_start => ov7670_sccb_start,
 		o_ready => ov7670_sccb_ready,
 		o_read_value_valid => ov7670_sccb_read_value_ready,
 		o_read_value => ov7670_sccb_read_value,
