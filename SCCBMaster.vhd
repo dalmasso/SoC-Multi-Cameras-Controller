@@ -109,7 +109,6 @@ signal clock_enable_x2: STD_LOGIC := '0';
 
 -- SCCB SCL Register
 signal scl_reg: STD_LOGIC := '0';
-signal scl_enable: STD_LOGIC := '0';
 
 -- SCCB SDA Output
 signal sda_out: STD_LOGIC := TRANSMISSION_DONT_CARE_BIT;
@@ -152,15 +151,15 @@ begin
 			-- Clock Enable
 			if (clock_divider = CLOCK_DIV-1) then
 				clock_enable <= '1';
-				clock_enable_x2 <= '1';
 			else
 				clock_enable <= '0';
-				clock_enable_x2 <= '0';
 			end if;
 
-			-- Clock Enable 1/2
+			-- Clock Enable x2
 			if (clock_divider = CLOCK_DIV_X2-1) then
 				clock_enable_x2 <= '1';
+			else
+				clock_enable_x2 <= '0';
 			end if;
 
 		end if;
@@ -396,23 +395,26 @@ begin
 	begin
 		if rising_edge(i_clock) then
 
-			-- Toggle SCL Reg
-			if (clock_enable_x2 = '1') then
-				scl_reg <= not(scl_reg);
+			-- SCL IDLE
+			if (state = IDLE) or (state = PREP_READ_PHASE) then
+				scl_reg <= '1';
+			
+			-- SCL Rising Edge
+			elsif (clock_enable_x2 = '1') then
+				scl_reg <= '1';
+			
+			-- SCL Falling Edge
+			elsif (clock_enable = '1') and (state /= END_TX) then
+				scl_reg <= '0';
 			end if;
 		end if;
 	end process;
-
-	---------------------
-	-- SCCB SCL Enable --
-	---------------------
-	scl_enable <= '0' when state = IDLE or state = START_TX or state = PREP_READ_PHASE else '1';
 
 	--------------
 	-- SCCB SCL --
 	--------------
 	-- ('0' or 'Z' values)
-	o_scl <= '0' when scl_reg = '0' and scl_enable = '1' else 'Z';
+	o_scl <= '0' when scl_reg = '0' else 'Z';
 
 	-----------------------
 	-- SCCB SDA Selector --
