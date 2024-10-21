@@ -8,6 +8,8 @@
 --			- Write Mode: 3-Phase Write Transmission
 --			- Read Mode: 2-Phase Write Transmission, then 2-Phase Read Transmission
 --
+-- WARNING: /!\ Require Pull-Up on SCL and SDA pins /!\
+--
 -- Usage:
 --		1. Set the inputs (keep unchanged until Ready signal is de-asserted)
 --			* Mode (Read/Write)
@@ -15,11 +17,9 @@
 --			* Register Address
 --			* Register Value (Write Mode only)
 --		2. Asserts Start input (available only when the SCCB Master is Ready)
---		3. SCCB Master de-assert the Ready signal
---		4. SCCB Master re-asserts ths Ready signal at the end of transmission ans it is ready for a new transmission
+--		3. SCCB Master de-asserts the Ready signal
+--		4. SCCB Master re-asserts the Ready signal at the end of transmission (master is ready for a new transmission)
 --		5. In Read mode only, the read value is available when its validity signal is asserted
---
--- WARNING: /!\ Require Pull-Up on SCL and SDA pins /!\
 --
 -- Generics
 --		Input	-	input_clock: Master Clock Frequency
@@ -27,15 +27,15 @@
 -- Ports
 --		Input 	-	i_clock: Input Clock
 --		Input 	-	i_mode: Read or Write Mode ('0': Write, '1': Read)
---		Input 	-	i_addr: Address of the SCCB Slave (7 bits)
+--		Input 	-	i_slave_addr: Address of the SCCB Slave (7 bits)
 --		Input 	-	i_reg_addr: Address of the Register to Read/Write
 --		Input 	-	i_reg_value: Value of the Register to Write
 --		Input 	-	i_start: Start SCCB Transmission ('0': No Start, '1': Start)
 --		Output 	-	o_ready: Ready State of SCCB Master ('0': Not Ready, '1': Ready)
 --		Output 	-	o_read_value_valid: Validity of value of the SCCB Slave Register ('0': Not Valid, '1': Valid)
 --		Output 	-	o_read_value: Value of the SCCB Slave Register
---		Output 	-	o_scl: OV7670 Serial Clock ('0'-'Z'('1') values, working with Pull-Up)
---		In/Out 	-	io_sda: OV7670 Serial Data ('0'-'Z'('1') values, working with Pull-Up)
+--		Output 	-	o_scl: SCCB Serial Clock ('0'-'Z'('1') values, working with Pull-Up)
+--		In/Out 	-	io_sda: SCCB Serial Data ('0'-'Z'('1') values, working with Pull-Up)
 ------------------------------------------------------------------------
 
 LIBRARY IEEE;
@@ -52,7 +52,7 @@ GENERIC(
 PORT(
 	i_clock: IN STD_LOGIC;
 	i_mode: IN STD_LOGIC;
-	i_addr: IN STD_LOGIC_VECTOR(6 downto 0);
+	i_slave_addr: IN STD_LOGIC_VECTOR(6 downto 0);
 	i_reg_addr: IN STD_LOGIC_VECTOR(7 downto 0);
 	i_reg_value: IN STD_LOGIC_VECTOR(7 downto 0);
 	i_start: IN STD_LOGIC;
@@ -94,7 +94,7 @@ signal next_state: sccbState;
 
 -- SCCB Input Registers
 signal mode: STD_LOGIC_VECTOR(1 downto 0) := "00";
-signal addr: STD_LOGIC_VECTOR(7 downto 0) := (others => '0');
+signal slave_addr: STD_LOGIC_VECTOR(7 downto 0) := (others => '0');
 signal reg_addr: STD_LOGIC_VECTOR(7 downto 0) := (others => '0');
 signal reg_value: STD_LOGIC_VECTOR(7 downto 0) := (others => '0');
 signal start: STD_LOGIC := '0';
@@ -304,15 +304,15 @@ begin
 
 				-- Load Slave Address Input (Handle continuous left-shift)
 				if (state = IDLE) then
-					addr <= SCCB_WRITE_MODE & i_addr;
+					slave_addr <= SCCB_WRITE_MODE & i_slave_addr;
 			
 				-- Slave Address Read Mode (Handle continuous left-shift)
 				elsif (state = PREP_READ_PHASE) then
-					addr <= SCCB_READ_MODE & addr(2 downto 0) & addr(7 downto 4);
+					slave_addr <= SCCB_READ_MODE & slave_addr(2 downto 0) & slave_addr(7 downto 4);
 				
 				-- Left-Shift
 				else
-					addr <= addr(6 downto 0) & addr(7);
+					slave_addr <= slave_addr(6 downto 0) & slave_addr(7);
 				end if;
 			end if;
 		end if;
@@ -419,7 +419,7 @@ begin
 	-----------------------
 	sda_out <=	TRANSMISSION_START_BIT when state = START_TX or state = END_TX else
 				TRANSMISSION_DONT_CARE_BIT when bit_counter(3) = '1' else
-				addr(7) when state = WRITE_SLAVE_ADDR else
+				slave_addr(7) when state = WRITE_SLAVE_ADDR else
 				reg_addr(7) when state = REGISTER_WRITE else
 				reg_value(7) when state = WRITE_REG_VALUE else
 				TRANSMISSION_DONT_CARE_BIT;
