@@ -69,11 +69,16 @@ COMPONENT ov7670_fifo_clock_gen is
 	);
 END COMPONENT;
 
-COMPONENT SCCBController is
+COMPONENT SCCBMaster is
+	GENERIC(
+		input_clock: INTEGER := 12_000_000;
+		sccb_clock: INTEGER := 100_000
+	);
+	
 	PORT(
 		i_clock: IN STD_LOGIC;
 		i_mode: IN STD_LOGIC;
-		i_addr: IN STD_LOGIC_VECTOR(7 downto 0);
+		i_addr: IN STD_LOGIC_VECTOR(6 downto 0);
 		i_reg_addr: IN STD_LOGIC_VECTOR(7 downto 0);
 		i_reg_value: IN STD_LOGIC_VECTOR(7 downto 0);
 		i_start: IN STD_LOGIC;
@@ -88,8 +93,8 @@ END COMPONENT;
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- OV7670 SCCB Write Address (0x42)
-constant OV7670_WRITE_ADDR: STD_LOGIC_VECTOR(7 downto 0) := X"42";
+-- OV7670 SCCB Write Address (0x21)
+constant OV7670_WRITE_ADDR: STD_LOGIC_VECTOR(6 downto 0) := "0100001";
 
 -- OV7670 SCCB Register: RESET Address & Value (156)
 constant REGISTER_RESET_ADDR: STD_LOGIC_VECTOR(7 downto 0) := X"12";
@@ -227,12 +232,12 @@ begin
 		end case;
 	end process;
 
-	----------------------------
-	-- OV7670 SCCB Configurer --
-	----------------------------
-	inst_sccbConfigurer : SCCBController port map (
+	------------------------
+	-- OV7670 SCCB Master --
+	------------------------
+	inst_sccbMaster : SCCBController port map (
 		i_clock => clock_12M,
-		i_mode => '1',
+		i_mode => '0',
 		i_addr => OV7670_WRITE_ADDR,
 		i_reg_addr => ov7670_sccb_reg_addr,
 		i_reg_value => ov7670_sccb_reg_value,
