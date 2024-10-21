@@ -31,7 +31,7 @@
 --		Input 	-	i_reg_addr: Address of the Register to Read/Write
 --		Input 	-	i_reg_value: Value of the Register to Write
 --		Input 	-	i_start: Start SCCB Transmission ('0': No Start, '1': Start)
---		Output 	-	o_ready: Ready State of SCCB Controller ('0': Not Ready, '1': Ready)
+--		Output 	-	o_ready: Ready State of SCCB Master ('0': Not Ready, '1': Ready)
 --		Output 	-	o_read_value_valid: Validity of value of the SCCB Slave Register ('0': Not Valid, '1': Valid)
 --		Output 	-	o_read_value: Value of the SCCB Slave Register
 --		Output 	-	o_scl: OV7670 Serial Clock ('0'-'Z'('1') values, working with Pull-Up)
@@ -87,7 +87,7 @@ constant TRANSMISSION_DONT_CARE_BIT: STD_LOGIC := '1';
 ------------------------------------------------------------------------
 -- Signal Declarations
 ------------------------------------------------------------------------
--- SCCB Controller States
+-- SCCB Master States
 TYPE sccbState is (IDLE, START_TX, WRITE_SLAVE_ADDR, REGISTER_WRITE, REGISTER_READ, WRITE_REG_VALUE, PREP_READ_PHASE, END_TX);
 signal state: sccbState := IDLE;
 signal next_state: sccbState;
@@ -384,9 +384,9 @@ begin
 		end if;
 	end process;
 
-	---------------------------
-	-- SCCB Controller Ready --
-	---------------------------
+	-----------------------
+	-- SCCB Master Ready --
+	-----------------------
 	o_ready <= '1' when state = IDLE else '0';
 
 	-----------------------
