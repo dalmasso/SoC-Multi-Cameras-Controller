@@ -22,10 +22,10 @@
 --		5. In Read mode only, the read value is available when its validity signal is asserted
 --
 -- Generics
---		Input	-	input_clock: Master Clock Frequency
---		Output	-	sccb_clock: SCCB Clock Frequency
+--		Input	-	input_clock: Module Input Clock Frequency
+--		Output	-	sccb_clock: SCCB Serial Clock Frequency
 -- Ports
---		Input 	-	i_clock: Input Clock
+--		Input 	-	i_clock: Module Input Clock
 --		Input 	-	i_mode: Read or Write Mode ('0': Write, '1': Read)
 --		Input 	-	i_slave_addr: Address of the SCCB Slave (7 bits)
 --		Input 	-	i_reg_addr: Address of the Register to Read/Write
