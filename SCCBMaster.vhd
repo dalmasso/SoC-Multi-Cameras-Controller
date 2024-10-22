@@ -34,8 +34,8 @@
 --		Output 	-	o_ready: Ready State of SCCB Master ('0': Not Ready, '1': Ready)
 --		Output 	-	o_read_value_valid: Validity of value of the SCCB Slave Register ('0': Not Valid, '1': Valid)
 --		Output 	-	o_read_value: Value of the SCCB Slave Register
---		Output 	-	o_scl: SCCB Serial Clock ('0'-'Z'('1') values, working with Pull-Up)
---		In/Out 	-	io_sda: SCCB Serial Data ('0'-'Z'('1') values, working with Pull-Up)
+--		Output 	-	o_scl: SCCB Serial Clock ('0'-'Z'(as '1') values, working with Pull-Up)
+--		In/Out 	-	io_sda: SCCB Serial Data ('0'-'Z'(as '1') values, working with Pull-Up)
 ------------------------------------------------------------------------
 
 LIBRARY IEEE;
