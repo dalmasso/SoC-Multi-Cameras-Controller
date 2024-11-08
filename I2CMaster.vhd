@@ -185,17 +185,17 @@ begin
 	begin
 		if rising_edge(i_clock) then
 
-            -- Reset State (on Reset or Error)
-            if (i_reset = '1') or (i2c_error = '1') then
-                state <= IDLE;
+			-- Reset State (on Reset or Error)
+			if (i_reset = '1') or (i2c_error = '1') then
+				state <= IDLE;
 			
-            -- Next State
+			-- Next State
 			else
 				state <= next_state;
 			end if;
 		end if;
 	end process;
-    
+
 	-- I2C Next State
 	process(state, i_start, i2c_ready, i_start_byte_enable, i_mode, byte_counter_end, busy_rising_edge)
 	begin
@@ -327,8 +327,8 @@ begin
 
 			-- Falling Edge Detection
 			busy_falling_edge <= not(i2c_busy) and i2c_busy_reg;
-        end if;
-    end process;
+		end if;
+	end process;
 
 	----------------------
 	-- I2C Byte Counter --
@@ -345,9 +345,8 @@ begin
 			elsif (busy_falling_edge = '1') then
 				byte_counter <= byte_counter +1;
 			end if;
-
-        end if;
-    end process;
+		end if;
+	end process;
 
 	-- Byte Counter End
 	byte_counter_end <= '1' when ((state = START_BYTE) or (state = WRITE_SLAVE_ADDR_W) or (state = WRITE_SLAVE_ADDR_R)) and (byte_counter = 1) else
@@ -397,8 +396,8 @@ begin
 			elsif (state = WRITE_REG_VALUE) and (byte_counter = 0) then
 				i2c_write_value <= i_reg_value;
 			end if;
-        end if;
-    end process;
+		end if;
+	end process;
 
 	--------------------------------------
 	-- I2C Read Value Valid Rising Edge --
@@ -412,8 +411,8 @@ begin
 
 			-- Rising Edge Detection
 			read_valid_rising_edge <= i2c_read_value_valid and not(i2c_read_value_valid_reg);
-        end if;
-    end process;
+		end if;
+	end process;
 
 	--------------------
 	-- I2C Read Value --
@@ -428,8 +427,8 @@ begin
 				-- Add New Read Value & Left-Shift
 				read_value_reg <= read_value_reg(max_bus_length-9 downto 0) & i2c_read_value;
 			end if;
-        end if;
-    end process;
+		end if;
+	end process;
 	o_read_value <= read_value_reg;
 
 	--------------------------

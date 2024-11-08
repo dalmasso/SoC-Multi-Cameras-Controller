@@ -83,17 +83,17 @@ begin
 	process(i_clock)
 	begin
 		if rising_edge(i_clock) then
-
-            -- SDA Line Edge Detection
-            sda_line_edge <= sda_line_level;
+			
+			-- SDA Line Edge Detection
+			sda_line_edge <= sda_line_level;
 			
 			-- Start Condition (SCL High while SDA High to Low)
 			if (scl_line_level = '1') and (sda_line_edge = '1') and (sda_line_level = '0') then
 				bus_busy <= '1';
 			
-            -- Stop Condition (SCL High while SDA Low to High)
+			-- Stop Condition (SCL High while SDA Low to High)
 			elsif (scl_line_level = '1') and (sda_line_edge = '0') and (sda_line_level = '1') then
-                bus_busy <= '0';	
+				bus_busy <= '0';	
 			end if;
 		end if;
 	end process;
@@ -105,8 +105,8 @@ begin
 	process(i_clock)
 	begin
 		if rising_edge(i_clock) then
-
-            -- SDA from Master = SDA Line
+			
+			-- SDA from Master = SDA Line
 			bus_arbitration <= i_sda_master xnor sda_line_level;
 
 		end if;
@@ -125,6 +125,6 @@ begin
 
 		end if;
 	end process;
-    o_scl_stretching <= scl_stretching;
+	o_scl_stretching <= scl_stretching;
 
 end Behavioral;

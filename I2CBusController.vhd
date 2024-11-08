@@ -236,14 +236,14 @@ begin
 	process(i_clock)
 	begin
         if rising_edge(i_clock) then
-            
-            -- Reset State
-            if (i_reset = '1') then
-                state <= IDLE;
-
-            -- Next State (when Clock Enable)
+			
+			-- Reset State
+			if (i_reset = '1') then
+				state <= IDLE;
+			
+			-- Next State (when Clock Enable)
 			elsif (clock_enable = '1') then
-                state <= next_state;
+				state <= next_state;
 			end if;
 		end if;
 	end process;
@@ -265,9 +265,9 @@ begin
 			-- Write Cycle
 			when I2C_WRITE =>
 							-- End of Write Cyle
-                            if (bit_counter_end = '1') then
-                                next_state <= I2C_WRITE_ACK;
-   
+							if (bit_counter_end = '1') then
+								next_state <= I2C_WRITE_ACK;
+
 							-- Master Loses Arbitration (during Write Cycle)
 							elsif (bus_arbitration = '0') then
 								next_state <= IDLE;
@@ -278,50 +278,50 @@ begin
 
 			-- End of Write Cycle (Slave ACK)
 			when I2C_WRITE_ACK =>
-                            -- Slave ACK Error or Stop Command
-                            if (sda_in /= TRANSMISSION_ACK_BIT) then
-                                next_state <= STOP_TX;
-                            
+							-- Slave ACK Error or Stop Command
+							if (sda_in /= TRANSMISSION_ACK_BIT) then
+								next_state <= STOP_TX;
+
 							-- Re-Start Transmission (Write and Read)
 							elsif (i_write = '1') and (i_read = '1') then
 								next_state <= RE_START_TX;
 
-                            -- Write Cycle Trigger (Write Only)
-                            elsif (i_write = '1') then
-                                next_state <= I2C_WRITE;
+							-- Write Cycle Trigger (Write Only)
+							elsif (i_write = '1') then
+								next_state <= I2C_WRITE;
 
-                            -- Read Cycle Trigger (Read Only)
-                            elsif (i_read = '1') then
-                                next_state <= I2C_READ;
+							-- Read Cycle Trigger (Read Only)
+							elsif (i_read = '1') then
+								next_state <= I2C_READ;
 
-                            -- Stop Trigger (No Write, No Read)
-                            else
-                                next_state <= STOP_TX;
-                            end if;
+							-- Stop Trigger (No Write, No Read)
+							else
+								next_state <= STOP_TX;
+							end if;
 
 			-- Read Cycle
 			when I2C_READ =>
 							-- End of Read Cyle
-                            if (bit_counter_end = '1') then
-                                next_state <= I2C_READ_ACK;
-                            else
-                                next_state <= I2C_READ;
-                            end if;
-            
-            -- End of Read Cycle (Master ACK)
-            when I2C_READ_ACK =>
+							if (bit_counter_end = '1') then
+								next_state <= I2C_READ_ACK;
+							else
+								next_state <= I2C_READ;
+							end if;
+
+			-- End of Read Cycle (Master ACK)
+			when I2C_READ_ACK =>
 							-- Re-Start Transmission (Write and Read)
 							if (i_write = '1') and (i_read = '1') then
 								next_state <= RE_START_TX;
 
 							-- Read Cycle Trigger
-                            elsif (i_read = '1') then
-                                next_state <= I2C_READ;
+							elsif (i_read = '1') then
+								next_state <= I2C_READ;
 
-                            -- Stop Trigger
-                            else
-                                next_state <= STOP_TX;
-                            end if;
+							-- Stop Trigger
+							else
+								next_state <= STOP_TX;
+							end if;
 
 			-- Re-Start Transmission
 			when RE_START_TX => next_state <= START_TX;
@@ -350,7 +350,7 @@ begin
 					bit_counter <= (others => '0');
 				end if;
 			end if;
-        end if;
+		end if;
     end process;
 
 	-- Bit Counter End
@@ -449,16 +449,16 @@ begin
 
 			-- Clock Enable
 			if (clock_enable = '1') then
-            
-                -- SDA Input Enable
-                if (state = I2C_READ) then
-				    sda_in_reg <= sda_in_reg(6 downto 0) & sda_in;
-                end if;
+				
+				-- SDA Input Enable
+				if (state = I2C_READ) then
+					sda_in_reg <= sda_in_reg(6 downto 0) & sda_in;
+				end if;
 
 			end if;
 		end if;
 	end process;
-    o_read_value <= sda_in_reg;
+	o_read_value <= sda_in_reg;
 
 	----------------------------------
 	-- I2C SDA Input Register Valid --
