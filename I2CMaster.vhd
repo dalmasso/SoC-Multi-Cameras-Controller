@@ -35,7 +35,7 @@
 -- Ports
 --		Input 	-	i_clock: Module Input Clock
 --		Input 	-	i_reset: Reset ('0': No Reset, '1': Reset)
---		Input 	-	i_start: Start I2C Transmission and process Next Phase ('0': No Start, '1': Start)
+--		Input 	-	i_start: Start I2C Transmission ('0': No Start, '1': Start)
 --		Input 	-	i_start_byte_enable: Enable I2C Start Byte Transmission Phase ('0': Disable, '1': Enable)
 --		Input 	-	i_mode: Read or Write Mode ('0': Write, '1': Read)
 --		Input 	-	i_slave_addr: Slave Address (7 bits)
