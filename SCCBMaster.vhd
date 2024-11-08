@@ -22,8 +22,8 @@
 --		5. In Read mode only, the read value is available when its validity signal is asserted
 --
 -- Generics
---		Input	-	input_clock: Module Input Clock Frequency
---		Output	-	sccb_clock: SCCB Serial Clock Frequency
+--		input_clock: Module Input Clock Frequency
+--		sccb_clock: SCCB Serial Clock Frequency
 -- Ports
 --		Input 	-	i_clock: Module Input Clock
 --		Input 	-	i_mode: Read or Write Mode ('0': Write, '1': Read)
@@ -81,7 +81,7 @@ constant SCCB_READ_MODE: STD_LOGIC := '1';
 -- SCCB Transmission Start Bit
 constant TRANSMISSION_START_BIT: STD_LOGIC := '0';
 
--- SCCB Transmission Don'T Care Bit ('Z' with Pull-Up)
+-- SCCB Transmission Don't Care Bit ('Z' with Pull-Up)
 constant TRANSMISSION_DONT_CARE_BIT: STD_LOGIC := '1';
 
 ------------------------------------------------------------------------
@@ -224,7 +224,7 @@ begin
 								next_state <= WRITE_SLAVE_ADDR;
 							end if;
 			
-			-- Write Register Value
+			-- Write Register Address
 			when REGISTER_WRITE =>
 							if (bit_counter(3) = '1') then
 
