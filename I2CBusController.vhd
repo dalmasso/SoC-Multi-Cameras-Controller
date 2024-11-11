@@ -138,7 +138,7 @@ signal scl_stretching: STD_LOGIC := '0';
 -- I2C Error
 signal error_flag: STD_LOGIC := '0';
 
--- I2C Transmission Bit Counter ('8 cycles per phase)
+-- I2C Transmission Bit Counter (8 cycles per phase)
 signal bit_counter: UNSIGNED(2 downto 0) := (others => '0');
 signal bit_counter_end: STD_LOGIC := '0';
 
