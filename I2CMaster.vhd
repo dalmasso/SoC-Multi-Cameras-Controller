@@ -123,11 +123,6 @@ END COMPONENT;
 constant I2C_WRITE_MODE: STD_LOGIC := '0';
 constant I2C_READ_MODE: STD_LOGIC := '1';
 
--- I2C Data Selection
-constant MSB_DATA_SELECTION_INIT: INTEGER := 7;
-constant LSB_DATA_SELECTION_INIT: INTEGER := 0;
-constant DATA_SELECTION_INCREMENT: INTEGER := 8;
-
 -- I2C Left Shift Data Value
 constant LEFT_SHIFT_EMPTY_VALUE: STD_LOGIC_VECTOR(7 downto 0) := (others => '0');
 
