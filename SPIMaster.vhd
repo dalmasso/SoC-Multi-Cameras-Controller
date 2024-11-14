@@ -73,7 +73,7 @@ GENERIC(
 PORT(
     i_clock: IN STD_LOGIC;
     i_reset: IN STD_LOGIC;
-    i_byte_number: IN INTEGER range 0 to max_data_register_length/8;
+    i_byte_number: IN INTEGER range 0 to 2*(max_data_register_length/8);
     i_byte_delay: IN INTEGER range 0 to 7;
     i_slave_select: IN STD_LOGIC_VECTOR(ss_length-1 downto 0);
     i_start: IN STD_LOGIC;
