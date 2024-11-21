@@ -188,8 +188,8 @@ begin
 			if (i_reset = '1') or (clock_divider = CLOCK_DIV-1) then
 				clock_divider <= 0;
 
-			-- Increment Clock Divider
-			else
+			-- Increment Clock Divider (when no SCL Stretching)
+			elsif (scl_stretching = '0') then
 				clock_divider <= clock_divider +1;
 			end if;
 		end if;
@@ -225,6 +225,13 @@ begin
 				else
 					clock_enable_x2_3_4 <= '0';
 				end if;
+			
+			-- SCL Stretching (Disable all Clock Enables)
+			else
+				clock_enable <= '0';
+				clock_enable_x2_1_4 <= '0';
+				clock_enable_x2_3_4 <= '0';
+
 			end if;
 		end if;
 	end process;
