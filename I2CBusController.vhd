@@ -271,7 +271,7 @@ begin
 
 			-- Write Cycle
 			when I2C_WRITE =>
-							-- End of Write Cyle
+							-- End of Write Cycle
 							if (bit_counter_end = '1') then
 								next_state <= I2C_WRITE_ACK;
 
@@ -308,7 +308,7 @@ begin
 
 			-- Read Cycle
 			when I2C_READ =>
-							-- End of Read Cyle
+							-- End of Read Cycle
 							if (bit_counter_end = '1') then
 								next_state <= I2C_READ_ACK;
 							else
