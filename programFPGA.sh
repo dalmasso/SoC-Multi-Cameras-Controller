@@ -1,4 +1,9 @@
 #!/bin/sh
+
+# Note: Vivado on ARM Mac --> https://github.com/ichi4096/vivado-on-silicon-mac
+# modify the Dockerfile to use "ubuntu:focal"
+# Not use of Rosetta Emulation in Docker Desktop
+
 echo "Starting FPGA Programmer..."
 
 # Get Bit File to program
