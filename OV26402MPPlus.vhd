@@ -1,54 +1,46 @@
 ------------------------------------------------------------------------
 -- Engineer:    Dalmasso Loic
--- Create Date: 15/07/2024
--- Module Name: OV7670FifoController (with embedded FIFO)
+-- Create Date: 23/01/2025
+-- Module Name: OV26402MPPlus
 -- Description:
---      OV7670 640x480 CMOS Camera Module with embedded FIFO controller
---		Input 	-	i_clock_100: Clock (100MHz)
+--      OV2640 2MP Plus Camera Module controller
+--		Input 	-	i_clock_8M: Clock (8MHz)
 --		Input 	-	i_reset: Reset ('0': NO Reset, '1': Reset)
---		Input 	-	i_ov7670_vsync: OV7670 Vertical Synchronization ('0': Current Image, '1': New Image)
---		Input 	-	i_ov7670_href: OV7670 Horizontal Synchronization ('0': No Image Data, '1': Image Data available)
---		Output 	-	o_ov7670_scl: OV7670 Configuration - Serial Interface Clock
---		In/Out 	-	io_ov7670_sda: OV7670 Configuration - Serial Interface Data
---		Output 	-	o_ov7670_fifo_write_reset: OV7670 FIFO Write Reset ('0': Reset, '1': No Reset)
---		Output 	-	o_ov7670_fifo_read_clock: OV7670 FIFO Read Clock (12 MHz)
---		Output 	-	o_ov7670_fifo_read_reset: OV7670 FIFO Read Reset ('0': Reset, '1': No Reset)
---		Input 	-	i_ov7670_fifo_read_data: OV7670 FIFO Read Data (Format: YUV 4:2:2, Sequence: U0 Y0 V0 Y1)
---		Output 	-	o_image_output_clock: OV7670 Image Output Clock
---		Output 	-	o_image_output_data_enable: OV7670 Image Output Data Enable ('0': Disable, '1': Enable)
---		Output 	-	o_image_output_data: OV7670 Image Output Data (8-bit, Format: YUV 4:2:2, Sequence: U0 Y0 V0 Y1)
+--		Input 	-	i_image_capture: Triggers Image Capture ('0': No Capture, '1': Capture)
+--		Output 	-	o_image_data_enable: OV2640 Image Output Data Enable ('0': Disable, '1': Enable)
+--		Output 	-	o_image_data: OV2640 Image Output Data (8-bit)
+--		In/Out 	-	io_scl: OV2640 I2C Serial Clock ('0'-'Z'(as '1') values, working with Pull-Up)
+--		In/Out 	-	io_sda: OV2640 I2C Serial Data ('0'-'Z'(as '1') values, working with Pull-Up)
+--		Output 	-	o_sclk: OV2640 SPI Serial Clock
+--		Output 	-	o_mosi: OV2640 SPI Master Output Slave Input Data line
+--		Input 	-	i_miso: OV2640 SPI Master Input Slave Output Data line
+--		Output 	-	o_ss: OV2640 SPI Slave Select Line (inverted ss_polarity: Not Selected, ss_polarity: Selected)
 ------------------------------------------------------------------------
 
 LIBRARY IEEE;
 USE IEEE.STD_LOGIC_1164.ALL;
 USE IEEE.NUMERIC_STD.ALL;
 
-Library UNISIM;
-use UNISIM.vcomponents.all;
-
-ENTITY OV7670FifoController is
+ENTITY OV26402MPPlus is
 PORT(
-	i_clock_100: IN STD_LOGIC;
+	i_clock_8M: IN STD_LOGIC;
 	i_reset: IN STD_LOGIC;
-	-- OV7670 Synchronization & Control
-	i_ov7670_vsync: IN STD_LOGIC;
-	i_ov7670_href: IN STD_LOGIC;
-	o_ov7670_scl: OUT STD_LOGIC;
-	io_ov7670_sda: INOUT STD_LOGIC;
-	-- OV7670 Embedded FIFO Write Controller
-	o_ov7670_fifo_write_reset: OUT STD_LOGIC;
-	-- OV7670 Embedded FIFO Read Controller
-	o_ov7670_fifo_read_clock: OUT STD_LOGIC;
-	o_ov7670_fifo_read_reset: OUT STD_LOGIC;
-	i_ov7670_fifo_read_data: IN STD_LOGIC_VECTOR(7 downto 0);
-	-- Image Data Output
-	o_image_output_clock: OUT STD_LOGIC;
-	o_image_output_data_enable: OUT STD_LOGIC;
-	o_image_output_data: OUT STD_LOGIC_VECTOR(7 downto 0)
+	-- OV2640 Image Controller
+    i_image_capture: IN STD_LOGIC;
+	o_image_data_enable: OUT STD_LOGIC;
+	o_image_data: OUT STD_LOGIC_VECTOR(7 downto 0);
+	-- OV2640 Image Sensor Configuration (I2C)
+	io_scl: INOUT STD_LOGIC;
+	io_sda: INOUT STD_LOGIC;
+    -- OV2640 Image Data (SPI)
+    o_sclk: OUT STD_LOGIC;
+    o_mosi: OUT STD_LOGIC;
+    i_miso: IN STD_LOGIC;
+    o_ss: OUT STD_LOGIC_VECTOR(ss_length-1 downto 0)
 );
-END OV7670FifoController;
+END OV26402MPPlus;
 
-ARCHITECTURE Behavioral of OV7670FifoController is
+ARCHITECTURE Behavioral of OV26402MPPlus is
 
 ------------------------------------------------------------------------
 -- Component Declarations
@@ -61,44 +53,78 @@ COMPONENT Synchronizer is
 	);
 END COMPONENT;
 
-COMPONENT ov7670_fifo_clock_gen is
+COMPONENT I2CMaster is
+	GENERIC(
+		input_clock: INTEGER := 12_000_000;
+		i2c_clock: INTEGER := 100_000;
+		max_bus_length: INTEGER := 8
+	);
+
 	PORT(
-		clk_out1: OUT STD_LOGIC;
-		locked: OUT STD_LOGIC;
-		clk_in1: IN STD_LOGIC
+		i_clock: IN STD_LOGIC;
+		i_reset: IN STD_LOGIC;
+		i_start: IN STD_LOGIC;
+		i_start_byte_enable: IN STD_LOGIC;
+		i_mode: IN STD_LOGIC;
+		i_slave_addr: IN STD_LOGIC_VECTOR(6 downto 0);
+		i_reg_addr_byte: IN INTEGER range 0 to max_bus_length/8;
+		i_reg_addr: IN STD_LOGIC_VECTOR(max_bus_length-1 downto 0);
+		i_reg_value_byte: IN INTEGER range 0 to max_bus_length/8;
+		i_reg_value: IN STD_LOGIC_VECTOR(max_bus_length-1 downto 0);
+		i_read_value_byte: IN INTEGER range 0 to max_bus_length/8;
+		o_read_value_valid: OUT STD_LOGIC;
+		o_read_value: OUT STD_LOGIC_VECTOR(max_bus_length-1 downto 0);
+		o_ready: OUT STD_LOGIC;
+		o_error: OUT STD_LOGIC;
+		o_busy: OUT STD_LOGIC;
+		io_scl: INOUT STD_LOGIC;
+		io_sda: INOUT STD_LOGIC
 	);
 END COMPONENT;
 
-COMPONENT SCCBMaster is
+COMPONENT SPIMaster is
 	GENERIC(
 		input_clock: INTEGER := 12_000_000;
-		sccb_clock: INTEGER := 100_000
+		spi_clock: INTEGER := 100_000;
+		cpol: STD_LOGIC := '0';
+		cpha: STD_LOGIC := '0';
+		ss_polarity: STD_LOGIC := '0';
+		ss_length: INTEGER := 1;
+		max_data_register_length: INTEGER := 8
 	);
-	
+
 	PORT(
 		i_clock: IN STD_LOGIC;
-		i_mode: IN STD_LOGIC;
-		i_salve_addr: IN STD_LOGIC_VECTOR(6 downto 0);
-		i_reg_addr: IN STD_LOGIC_VECTOR(7 downto 0);
-		i_reg_value: IN STD_LOGIC_VECTOR(7 downto 0);
+		i_reset: IN STD_LOGIC;
+		i_byte_number: IN INTEGER range 0 to 2*(max_data_register_length/8);
+		i_byte_delay: IN INTEGER range 0 to 7;
+		i_slave_select: IN STD_LOGIC_VECTOR(ss_length-1 downto 0);
 		i_start: IN STD_LOGIC;
-		o_ready: OUT STD_LOGIC;
+		i_write_value: IN STD_LOGIC_VECTOR(max_data_register_length-1 downto 0);
+		o_read_value: OUT STD_LOGIC_VECTOR(max_data_register_length-1 downto 0);
 		o_read_value_valid: OUT STD_LOGIC;
-		o_read_value: OUT STD_LOGIC_VECTOR(7 downto 0);
-		o_scl: OUT STD_LOGIC;
-		io_sda: INOUT STD_LOGIC
+		o_ready: OUT STD_LOGIC;
+		o_busy: OUT STD_LOGIC;
+		o_sclk: OUT STD_LOGIC;
+		o_mosi: OUT STD_LOGIC;
+		i_miso: IN STD_LOGIC;
+		o_ss: OUT STD_LOGIC_VECTOR(ss_length-1 downto 0)
 	);
 END COMPONENT;
 
 ------------------------------------------------------------------------
 -- Constant Declarations
 ------------------------------------------------------------------------
--- OV7670 SCCB Write Address (0x21)
-constant OV7670_WRITE_ADDR: STD_LOGIC_VECTOR(6 downto 0) := "0100001";
+-- OV2640 I2C Address (Write: 0x60, Read: 0x61)
+constant OV2640_I2C_ADDR: STD_LOGIC_VECTOR(5 downto 0) := "110000";
 
--- OV7670 SCCB Register: RESET Address & Value (156)
+-- OV2640 I2C Register: RESET Address & Value (156)
 constant REGISTER_RESET_ADDR: STD_LOGIC_VECTOR(7 downto 0) := X"12";
 constant REGISTER_RESET_VALUE: STD_LOGIC_VECTOR(7 downto 0) := X"80";
+
+
+
+
 
 -- OV7670 SCCB Register: HSTART Address & Value (156)
 constant REGISTER_HSTART_ADDR: STD_LOGIC_VECTOR(7 downto 0) := X"17";
