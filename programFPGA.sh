@@ -4,6 +4,7 @@
 # modify the Dockerfile to use "ubuntu:focal"
 # Not use of Rosetta Emulation in Docker Desktop
 # Error with /tmp/.X11-unix, use command: mkfifo /tmp/.X11-unix
+# On XQuartz Terminal: xhost + ${hostname}
 
 echo "Starting FPGA Programmer..."
 
