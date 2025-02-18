@@ -3,6 +3,7 @@
 # Note: Vivado on ARM Mac --> https://github.com/ichi4096/vivado-on-silicon-mac
 # modify the Dockerfile to use "ubuntu:focal"
 # Not use of Rosetta Emulation in Docker Desktop
+# Error with /tmp/.X11-unix, use command: mkfifo /tmp/.X11-unix
 
 echo "Starting FPGA Programmer..."
 
