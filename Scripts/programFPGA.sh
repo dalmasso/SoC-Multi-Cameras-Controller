@@ -1,8 +1,10 @@
 #!/bin/sh
-
+# From https://github.com/byu-cpe/BYU-Computing-Tutorials/wiki/Program-7-Series-FPGA-from-a-Mac-or-Linux-Without-Xilinx
 # Note: Vivado on ARM Mac --> https://github.com/ichi4096/vivado-on-silicon-mac
 # modify the Dockerfile to use "ubuntu:focal"
 # Not use of Rosetta Emulation in Docker Desktop
+# XQuartz configuration (https://gist.github.com/cschiewek/246a244ba23da8b9f0e7b11a68bf3285)
+# Open XQuartz terminal and allow connection (use command 'xhost')
 
 echo "Starting FPGA Programmer..."
 
